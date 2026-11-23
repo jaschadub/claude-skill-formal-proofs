@@ -1,12 +1,11 @@
 ---
 name: tla-check
-description: "Check a TLA+ model with TLC using only Java: one shell script, no Node, no mise, no chart. Prints whether each rule holds and, when one breaks, the shortest path to it with only the variables that changed at each step. Use for /tla-check, or when a TLA+ spec needs a pass or fail and a counterexample rather than a drawing."
-disable-model-invocation: true
+description: "Use when a TLA+ spec must be run: to learn whether its invariants hold and to get the shortest counterexample, with only Java installed. Use the statechart skill instead only when a drawing of the state graph is wanted."
 ---
 
 # TLA+ check
 
-The lean way to run a TLA+ model. It answers one question: do the rules hold in every reachable state, and if not, what is the shortest path to the break. For a drawing of the state graph, use `/statechart`.
+The lean way to run a TLA+ model. It answers one question: do the rules hold in every reachable state, and if not, what is the shortest path to the break. For a drawing of the state graph, use `statechart`.
 
 ## Run
 

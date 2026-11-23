@@ -1,0 +1,19 @@
+{
+  "name": "formal-proofs",
+  "description": "Formally verify the code where a bug costs the most, and keep that verification true to the code as it changes. Includes a Java-only TLA+ checker.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jascha Wanger",
+    "url": "https://jascha.me"
+  },
+  "homepage": "https://github.com/jaschadub/claude-skill-formal-proofs",
+  "repository": "https://github.com/jaschadub/claude-skill-formal-proofs",
+  "license": "MIT",
+  "keywords": [
+    "formal-verification",
+    "tla+",
+    "model-checking",
+    "skills",
+    "concurrency"
+  ]
+}

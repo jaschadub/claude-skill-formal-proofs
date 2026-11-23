@@ -1,0 +1,11 @@
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck skills/tla-check/*.sh skills/maintain-formal-verification/drift.sh
+      - run: sh skills/tla-check/test.sh

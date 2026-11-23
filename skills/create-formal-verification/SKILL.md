@@ -1,7 +1,6 @@
 ---
 name: create-formal-verification
-description: "Generate a project-local skill that formally verifies the code where a bug costs the most and tests reach the least, in any language, with whichever verification tool fits. Use for /create-formal-verification, \"model-check this race\", \"prove this invariant\", or when concurrency, retries, state machines, parsers, or unsafe code need more than tests."
-disable-model-invocation: true
+description: "Use when code needs more assurance than tests can give and no formal check covers it yet: races, retries, lock ordering, state machines, parsers, or unsafe code where a bug is costly. Also for requests such as \"model-check this race\", \"prove this invariant\", or \"formally verify this\"."
 ---
 
 # Create a formal verification skill
@@ -32,9 +31,18 @@ Pick the tool that answers the question at the lowest cost: a model checker, a p
 
 ## Generate the verify skill
 
-Write a project-local skill at `.claude/skills/<name>/SKILL.md` with frontmatter that names the area and says when to use it. Without frontmatter, the skill never registers. From the skill alone, the next agent must be able to tell whether a change touches the verified code, run the check, tell a real bug from a modeling error, and update the verification when a change is intended. Put the coverage record and the sync commit in the skill, and tell the next agent to move the sync commit forward only after it confirms that the verification describes the code at the new commit. Use this repo's real commands, paths, and nouns, and leave no placeholders.
+Write a project-local skill at `.claude/skills/<name>/SKILL.md` with frontmatter that names the area and says when to use it. Without frontmatter, the skill never registers. From the skill alone, the next agent must be able to tell whether a change touches the verified code, run the check, tell a real bug from a modeling error, and update the verification when a change is intended. Put the coverage record and the sync commit in the skill as one fenced block in exactly this shape, with one line for each covered file:
 
-If the check is a TLA+ model, tell the next agent to run it with the [`/tla-check`](../tla-check/SKILL.md) skill. It needs only Java, and it prints whether each rule holds and the shortest path to a break, with only the variables that changed at each step. For a model small enough to draw, about 500 states or fewer, the [`/statechart`](../statechart/SKILL.md) skill also draws how the system moves between states; it needs a TypeScript runtime and mise. Refer to both by name. Their commands, options, and file paths change between releases and machines, so copy none of them into the generated skill or its scripts.
+```
+sync-commit: 1a2b3c4
+covered:
+  - src/session.rs refresh, request
+  - src/store.rs update
+```
+
+`drift.sh` in the `maintain-formal-verification` skill reads this block and lists the commits that touched covered files since the sync commit. Also tell the next agent to move the sync commit forward only after it confirms that the verification describes the code at the new commit. Use this repo's real commands, paths, and nouns, and leave no placeholders.
+
+If the check is a TLA+ model, tell the next agent to run it with the [`tla-check`](../tla-check/SKILL.md) skill. It needs only Java, and it prints whether each rule holds and the shortest path to a break, with only the variables that changed at each step. For a model small enough to draw, about 500 states or fewer, the [`statechart`](../statechart/SKILL.md) skill also draws how the system moves between states; it needs a TypeScript runtime and mise. Refer to both by name, and say that they come from the `formal-proofs` plugin, so that the next agent can find them. Their commands, options, and file paths change between releases and machines, so copy none of them into the generated skill or its scripts.
 
 Give the model a switch for each deliberate break that you used to show a rule failing, such as a `Faults` constant that is empty in the committed config. List each fault in the generated skill with the rules it must break, so that the next agent can confirm in one run each that the check can still fail.
 
@@ -44,4 +52,4 @@ Follow the generated skill once, as the next agent would, on a scratch change th
 
 ## Hand off
 
-Tell the user what you verified, which tool you used and why, the bounds, what the check found in plain words, how to run it, and what it does not cover. Suggest a second target only if you found a close one. Point the user at `/maintain-formal-verification` for bringing the verification back in line after changes that did not recheck it.
+Tell the user what you verified, which tool you used and why, the bounds, what the check found in plain words, how to run it, and what it does not cover. Suggest a second target only if you found a close one. Point the user at `maintain-formal-verification` for bringing the verification back in line after changes that did not recheck it.

@@ -28,5 +28,5 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 cd "$(dirname "$spec")"
 # -difftrace: each step of a counterexample shows only the variables that changed.
-"$java" -XX:+UseParallelGC -cp "$jar" tlc2.TLC -config "$cfg" -metadir "$work" \
+"$java" -XX:+UseParallelGC "-Djava.io.tmpdir=$work" -cp "$jar" tlc2.TLC -config "$cfg" -metadir "$work" \
   -workers auto -difftrace "$@" "$(basename "$spec")"
