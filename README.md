@@ -86,7 +86,7 @@ Ask your agent in plain words:
 - uses: actions/checkout@v4
   with:
     fetch-depth: 0 # so that a failure can list the commits since the last sync
-- uses: jaschadub/skill-formal-proofs@v0.3.0
+- uses: jaschadub/skill-formal-proofs@v0.3.1
   with:
     specs: formal/session/Session.tla
 ```
