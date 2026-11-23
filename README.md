@@ -13,11 +13,11 @@
 </p>
 
 <p align="center">
-  <a href="#install"><img src="https://img.shields.io/badge/Claude_Code-plugin-black" alt="Claude Code plugin"></a>
-  <a href="#install"><img src="https://img.shields.io/badge/Codex-plugin-black" alt="Codex plugin"></a>
-  <a href="#install"><img src="https://img.shields.io/badge/Cursor-plugin-black" alt="Cursor plugin"></a>
-  <a href="#install"><img src="https://img.shields.io/badge/Pi-package-black" alt="Pi package"></a>
-  <a href="#install"><img src="https://img.shields.io/badge/Other_agents-SKILL.md-black" alt="Other agents: SKILL.md folders"></a>
+  <a href="#claude-code"><img src="https://img.shields.io/badge/Claude_Code-plugin-black" alt="Claude Code plugin"></a>
+  <a href="#codex"><img src="https://img.shields.io/badge/Codex-plugin-black" alt="Codex plugin"></a>
+  <a href="#cursor"><img src="https://img.shields.io/badge/Cursor-plugin-black" alt="Cursor plugin"></a>
+  <a href="#pi"><img src="https://img.shields.io/badge/Pi-package-black" alt="Pi package"></a>
+  <a href="#other-agents"><img src="https://img.shields.io/badge/Other_agents-SKILL.md-black" alt="Other agents: SKILL.md folders"></a>
   <a href="#check-it-in-ci"><img src="https://img.shields.io/badge/GitHub_Action-CI_check-black" alt="GitHub Action: CI check"></a>
 </p>
 
@@ -38,27 +38,37 @@ See [how it works](docs/design.md), a [worked example](examples/counter), and [t
 
 ## Install
 
-**Claude Code**
+### Claude Code
 
 ```
 /plugin marketplace add jaschadub/skill-formal-proofs
 /plugin install formal-proofs@formal-proofs
 ```
 
-**Codex**
+### Codex
 
 ```sh
 codex plugin marketplace add jaschadub/skill-formal-proofs
 codex plugin add formal-proofs@formal-proofs
 ```
 
-**Pi**
+### Cursor
+
+```sh
+git clone https://github.com/jaschadub/skill-formal-proofs ~/.cursor/plugins/local/formal-proofs
+```
+
+Then restart Cursor, or run **Developer: Reload Window**. The plugin shows up under **Customize**. A team admin can instead import the repo URL as a team marketplace in the dashboard.
+
+### Pi
 
 ```sh
 pi install git:github.com/jaschadub/skill-formal-proofs
 ```
 
-**Other agents:** the skills are plain `SKILL.md` folders. Clone the repo and link `skills/*` into `~/.agents/skills/`. Cursor can add the repo as a plugin.
+### Other agents
+
+The skills are plain `SKILL.md` folders. Clone the repo and link `skills/*` into `~/.agents/skills/`.
 
 ## Use
 
