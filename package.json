@@ -1,0 +1,24 @@
+{
+  "name": "formal-proofs",
+  "version": "0.2.0",
+  "description": "Formally verify the code where a bug costs the most, and keep that verification true to the code as it changes. Includes a Java-only TLA+ checker.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "repository": "github:jaschadub/skill-formal-proofs",
+  "keywords": [
+    "pi-package",
+    "formal-verification",
+    "tla+",
+    "model-checking",
+    "skills"
+  ],
+  "pi": {
+    "skills": [
+      "./skills"
+    ],
+    "extensions": [
+      "./pi/remind.ts"
+    ]
+  }
+}

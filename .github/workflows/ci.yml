@@ -11,6 +11,11 @@ jobs:
       - run: sh skills/tla-check/test.sh
       - run: sh skills/maintain-formal-verification/test.sh
       - run: sh hooks/test.sh
+      - name: Every manifest parses and carries the same version
+        run: |
+          manifests=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .cursor-plugin/plugin.json .agents/plugins/marketplace.json package.json hooks/hooks.json"
+          for file in $manifests; do python3 -m json.tool "$file" > /dev/null; done
+          test "$(grep -h '"version"' $manifests | tr -d ' ,' | sort -u | wc -l)" = 1
       # The same step that a project adds to its own CI; see examples/github-workflow.yml.
       - name: Check the example record and model with the action
         uses: ./

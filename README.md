@@ -54,13 +54,13 @@ Each `> ` line cites a line of the file by its text. The hash covers the text fr
 
 Three things make the check run without anyone remembering it.
 
-**The hook, in Claude Code.** The plugin installs it. After an agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
+**The hook, in the agent.** The install for Claude Code, Codex, and Pi sets it up. After the agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
 
 ```
-formal-proofs: this edit changed verified code. examples/counter/counter.py no longer
-matches the record in examples/counter/VERIFY.md (cited line is missing or moved: with lock:).
-Before you finish, follow that record: make the verification describe the change, run the
-check, and only then run: sh .../drift.sh --sync examples/counter/VERIFY.md
+formal-proofs: this edit changed verified code, which no longer matches its record.
+examples/counter/VERIFY.md: examples/counter/counter.py: cited line is missing or moved: with lock:.
+Before you finish, follow that record: make the verification describe the change and run
+the check. Only then run, from the root of the repo: sh .../drift.sh --sync examples/counter/VERIFY.md
 ```
 
 **The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. Copy [`examples/github-workflow.yml`](examples/github-workflow.yml) into your project, or add the step to a job you have:
@@ -98,19 +98,47 @@ On versions before 2.1.275, add the marketplace first:
 
 The skills are then available in every project as `/formal-proofs:create-formal-verification` and so on.
 
+### Codex
+
+```sh
+codex plugin marketplace add jaschadub/skill-formal-proofs
+codex plugin add formal-proofs@formal-proofs
+```
+
+Codex asks you to review the plugin's hook once, with `/hooks`, before it runs.
+
+### Pi
+
+```sh
+pi install git:github.com/jaschadub/skill-formal-proofs
+```
+
+The skills are then available as `/skill:create-formal-verification` and so on.
+
 ### Cursor
 
-The repo carries a `.cursor-plugin/plugin.json`; add it as a plugin from this repository.
+The repo carries a `.cursor-plugin/plugin.json`; add it as a plugin from this repository. Cursor gets the skills, not the hook.
 
-### Codex, Copilot CLI, Gemini CLI, and other agents
+### Other agents
 
-The skills are plain `SKILL.md` folders. Link them into the shared skills directory:
+The skills are plain `SKILL.md` folders. Link them into the shared skills directory, which Copilot CLI, Gemini CLI, and others read:
 
 ```sh
 git clone https://github.com/jaschadub/skill-formal-proofs.git
 mkdir -p ~/.agents/skills
 ln -s "$PWD"/skill-formal-proofs/skills/* ~/.agents/skills/
 ```
+
+### What was tested
+
+| Agent | Skills load | Hook fires |
+|-------|-------------|------------|
+| Claude Code 2.1 | yes | yes, in a live session |
+| Codex | yes | not run live; the hook file follows the Codex hook format |
+| Pi 1.6 | yes | the extension was run against a stand-in for Pi, not a live session |
+| Cursor | not tested | no hook |
+
+`sh hooks/test.sh` checks the hook script against the input format of each agent.
 
 ## Requirements
 
@@ -127,6 +155,8 @@ sh hooks/test.sh
 shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh
 claude plugin validate .
 ```
+
+The version is in five manifests, and CI checks that they agree.
 
 ## Credits
 

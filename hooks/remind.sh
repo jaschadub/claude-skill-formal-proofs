@@ -1,18 +1,39 @@
 #!/bin/sh
 # Copyright (c) 2026 Jascha Wanger (jascha.me). MIT license; see LICENSE.
-# PostToolUse hook for file edits. Reads the hook's JSON on stdin. When the edited file is verified
-# code that no longer matches its VERIFY.md record, it tells the agent. Otherwise it prints nothing.
+# After an edit to verified code that no longer matches its VERIFY.md record, tell the agent.
+# usage: sh remind.sh < HOOK.json    a hook of Claude Code or Codex: JSON in, JSON out
+#        sh remind.sh FILE...        any other agent, such as Pi: prints the reminder as plain text
+# It prints nothing when no edited file is covered code, or when the covered code still matches.
 plugin=$(cd "$(dirname "$0")/.." && pwd) || exit 0
 drift=$plugin/skills/maintain-formal-verification/drift.sh
-file=$(sed -n 's/.*"file_path" *: *"\([^"]*\)".*/\1/p' | head -n 1)
-[ -n "$file" ] || exit 0
-cd "$(dirname "$file")" 2>/dev/null || exit 0
-prefix=$(git rev-parse --show-prefix 2>/dev/null) || exit 0
-file=$prefix$(basename "$file")
-cd "$(git rev-parse --show-toplevel)" || exit 0
-hit=$(sh "$drift" 2>/dev/null | grep -F ": $file: " | head -n 1)
-[ -n "$hit" ] || exit 0
-rec=${hit%%: *}
-text="formal-proofs: this edit changed verified code. $file no longer matches the record in $rec (${hit#*: *: }). Before you finish, follow that record: make the verification describe the change, run the check, and only then run: sh $drift --sync $rec"
-printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' \
-  "$(printf '%s' "$text" | tr -d '[:cntrl:]' | sed 's/[\\"]/\\&/g')"
+event=
+if [ $# -gt 0 ]; then
+  files=$(printf '%s\n' "$@")
+else
+  input=$(cat)
+  field() { printf '%s' "$input" | sed -n "s/.*\"$1\" *: *\"\([^\"]*\)\".*/\1/p" | head -n 1; }
+  event=$(field hook_event_name)
+  cwd=$(field cwd)
+  [ -z "$cwd" ] || cd "$cwd" 2>/dev/null || exit 0
+  # The edited files: "file_path" (Claude Code), "path", or the file lines of a Codex patch.
+  files=$(printf '%s' "$input" | grep -oE '"(file_path|path)" *: *"[^"]*"|\*\*\* (Add|Update) File: [^\\"]*' |
+    sed 's/^"[a-z_]*" *: *"//; s/"$//; s/^\*\*\* [A-Za-z]* File: //')
+fi
+
+# Print the line of the drift report for file $1, when a record covers it and it no longer matches.
+report() (
+  cd "$(dirname "$1")" 2>/dev/null || exit 0
+  prefix=$(git rev-parse --show-prefix 2>/dev/null) || exit 0
+  cd "$(git rev-parse --show-toplevel)" || exit 0
+  sh "$drift" 2>/dev/null | grep -F ": $prefix$(basename "$1"): "
+)
+hits=$(printf '%s\n' "$files" | while IFS= read -r file; do [ -z "$file" ] || report "$file"; done | sort -u)
+[ -n "$hits" ] || exit 0
+records=$(printf '%s\n' "$hits" | sed 's/: .*//' | sort -u | tr '\n' ' ')
+text="formal-proofs: this edit changed verified code, which no longer matches its record. $(printf '%s' "$hits" | tr '\n' ';' | sed 's/;/; /g'). Before you finish, follow that record: make the verification describe the change and run the check. Only then run, from the root of the repo: sh $drift --sync ${records% }"
+if [ -z "$event" ]; then
+  printf '%s\n' "$text"
+else
+  printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' "$event" \
+    "$(printf '%s' "$text" | tr -d '[:cntrl:]' | sed 's/[\\"]/\\&/g')"
+fi

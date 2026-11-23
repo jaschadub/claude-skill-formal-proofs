@@ -78,7 +78,7 @@ If the check is a TLA+ model, tell the next agent to run it with the [`tla-check
 
 Give the model a switch for each deliberate break that you used to show a rule failing, such as a `Faults` constant that is empty in the committed config. List each fault in the record with the rules it must break, so that the next agent can confirm in one run each that the check can still fail. Also list each step that never runs in the committed config, with the reason, such as a step behind a switch that is off. Any other step that never runs is an error in the model.
 
-Then write a project-local skill at `.claude/skills/<name>/SKILL.md` that only points at the record. Its frontmatter names the covered files and functions and says when to use it, because without frontmatter the skill never registers. Its body is one line that tells the agent to read the record and follow it. Run `git check-ignore -q .claude/skills/<name>/SKILL.md`. If it exits 0, git ignores that file here, so say in the hand-off that the pointer stays on this machine and the record is what is shared.
+Then write a project-local skill that only points at the record. Put it where your agent reads project skills: `.claude/skills/<name>/SKILL.md` for Claude Code, and `.agents/skills/<name>/SKILL.md` for Codex, Pi, and most other agents. Its frontmatter names the covered files and functions and says when to use it, because without frontmatter the skill never registers. Its body is one line that tells the agent to read the record and follow it. Run `git check-ignore -q` on that file. If it exits 0, git ignores the file here, so say in the hand-off that the pointer stays on this machine and the record is what is shared.
 
 ## Prove it before you hand off
 

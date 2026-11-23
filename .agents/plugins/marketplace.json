@@ -1,0 +1,20 @@
+{
+  "name": "formal-proofs",
+  "interface": {
+    "displayName": "Formal Proofs"
+  },
+  "plugins": [
+    {
+      "name": "formal-proofs",
+      "source": {
+        "source": "url",
+        "url": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

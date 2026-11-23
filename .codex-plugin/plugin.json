@@ -1,0 +1,33 @@
+{
+  "name": "formal-proofs",
+  "version": "0.2.0",
+  "description": "Formally verify the code where a bug costs the most, and keep that verification true to the code as it changes. Includes a Java-only TLA+ checker.",
+  "author": {
+    "name": "Jascha Wanger",
+    "url": "https://jascha.me"
+  },
+  "homepage": "https://github.com/jaschadub/skill-formal-proofs",
+  "repository": "https://github.com/jaschadub/skill-formal-proofs",
+  "license": "MIT",
+  "keywords": [
+    "formal-verification",
+    "tla+",
+    "model-checking",
+    "skills",
+    "concurrency"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Formal Proofs",
+    "shortDescription": "Catch bugs your tests miss with formal checks you can rerun",
+    "longDescription": "Turns rules such as \"retrying a payment must never charge a customer twice\" into formal checks, records which code each check covers, and reports when that code changes without a recheck.",
+    "developerName": "Jascha Wanger",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/jaschadub/skill-formal-proofs"
+  }
+}
