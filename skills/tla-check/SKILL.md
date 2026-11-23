@@ -23,6 +23,7 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 - Write `Next` as a disjunction of named actions, so that each step of a counterexample carries the name of its action.
 - TLC reports a state with no step out as a deadlock, also when it is a correct end state. Add to `Next` an action that is true only in the end states and changes nothing, such as `AllDone == (\A p \in Procs : pc[p] = "done") /\ UNCHANGED vars`.
 - Keep the constants small. TLC explores every reachable state, so a model with no bound runs without end.
+- To say that a step never has to wait, use `ENABLED`, such as `reader = "close" => ENABLED Close`. A rule about the state alone cannot tell a step that waits from one that is about to happen, so it also fails for correct code.
 
 ## Read the result
 
@@ -85,6 +86,8 @@ Have the code write one line each time it does something that the model has an a
 ```
 [action |-> "Write", thread |-> "t1", count |-> 1]
 ```
+
+When you may not change the product code, log from the test: wrap or replace the parts that take the steps.
 
 Log what the code does, at every place where it does it: a line at each place that takes the lock, not one line for each call. Then a change that takes the lock twice shows in every run. A log that is written to match the model hides that change in almost every run.
 
