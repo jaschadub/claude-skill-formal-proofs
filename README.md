@@ -11,6 +11,8 @@ Your coding agent turns rules like “retrying a payment must never charge a cus
 
 A hook reminds the agent when it edits verified code, and a GitHub Action catches the same in CI.
 
+For Rust code, the agent also gets a guide to the checkers that run the real code, such as loom, shuttle, and Kani.
+
 See [how it works](docs/design.md), a [worked example](examples/counter), and [the same in Rust](examples/counter-rs).
 
 ## Install
@@ -43,17 +45,18 @@ Ask your agent in plain words:
 
 - “Formally verify the token refresh code.”
 - “Is the model still true to the code?”
+- “Check a real run of the code against the model.”
 
 ## Check it in CI
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: jaschadub/skill-formal-proofs@v0.2.0
+- uses: jaschadub/skill-formal-proofs@v0.3.0
   with:
     specs: formal/session/Session.tla
 ```
 
-The build fails when verified code changed without a recheck, or when a model breaks a rule. [`examples/github-workflow.yml`](examples/github-workflow.yml) is a full workflow to copy.
+The build fails when verified code changed without a recheck, or when a model breaks a rule. A `traces` input also fails it when a model cannot follow the log of a real run. [`examples/github-workflow.yml`](examples/github-workflow.yml) is a full workflow to copy.
 
 ## Requirements
 
@@ -62,11 +65,14 @@ The build fails when verified code changed without a recheck, or when a model br
 
 ## Development
 
+The tests need Java, Node 22.18 or later, and cargo.
+
 ```sh
 sh skills/tla-check/test.sh
 sh skills/maintain-formal-verification/test.sh
 sh hooks/test.sh
 sh examples/counter-rs/test.sh
+cargo clippy --manifest-path examples/counter-rs/Cargo.toml --all-targets --features trace -- -D warnings
 (cd skills/statechart/scripts && npm install --no-package-lock && npm test)
 shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh examples/counter-rs/*.sh
 ```

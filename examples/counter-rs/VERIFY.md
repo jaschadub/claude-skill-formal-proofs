@@ -35,7 +35,7 @@ covered:
 
 ## Run the checks
 
-Run these from `examples/counter-rs`. The tools come from the `formal-proofs` plugin, https://github.com/jaschadub/skill-formal-proofs. `trace.sh` is in versions after 0.2.0.
+Run these from `examples/counter-rs`. The tools come from the `formal-proofs` plugin, https://github.com/jaschadub/skill-formal-proofs. `trace.sh` needs version 0.3.0 or later.
 
 1. **Every order, on the real code.** `RUSTFLAGS="--cfg loom" cargo test --release every_order`. [loom](https://docs.rs/loom) runs `no_lost_hit` once for each order in which two threads can take their steps. A pass is `test result: ok. 1 passed`. A run that reports 0 tests checked nothing: the `--cfg loom` flag was missing.
 2. **A real run against the model.** `TRACE_LOG=$PWD/target/trace.log cargo test --features trace real_run` runs three real threads and writes one line for each step. Then check the log with `trace.sh` from the `tla-check` skill: `sh <that skill's folder>/trace.sh ../counter/CounterTrace.tla target/trace.log`. A pass is `ok: the model follows all 9 events`.
