@@ -9,14 +9,16 @@ use std::sync::Mutex;
 #[cfg(feature = "trace")]
 static TRACE: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
 
-/// Log a step. Call it while the step still holds the lock, or the log can differ from the real order.
+/// Log a step and the count that it leaves. Call it while the step still holds the lock, or the log can
+/// differ from the real order.
 macro_rules! trace {
-    ($action:literal) => {
+    ($action:literal, $count:expr) => {
         #[cfg(feature = "trace")]
         TRACE.lock().unwrap().push(format!(
-            "[action |-> \"{}\", thread |-> \"{}\"]",
+            "[action |-> \"{}\", thread |-> \"{}\", count |-> {}]",
             $action,
-            std::thread::current().name().unwrap_or("?")
+            std::thread::current().name().unwrap_or("?"),
+            $count
         ));
     };
 }
@@ -29,11 +31,11 @@ pub struct Counter {
 impl Counter {
     pub fn hit(&self) {
         let mut count = self.count.lock().unwrap();
-        trace!("TakeLock");
+        trace!("TakeLock", *count);
         let seen = *count;
-        trace!("Read");
+        trace!("Read", *count);
         *count = seen + 1;
-        trace!("Write");
+        trace!("Write", *count);
     }
 
     pub fn get(&self) -> u64 {
@@ -83,6 +85,8 @@ mod real_run {
 
     #[test]
     fn write_trace() {
+        // Another test of this run can have logged its own steps.
+        TRACE.lock().unwrap().clear();
         let counter = Arc::new(Counter::default());
         let threads: Vec<_> = ["t1", "t2", "t3"]
             .into_iter()

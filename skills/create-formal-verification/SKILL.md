@@ -87,7 +87,7 @@ Then write a project-local skill that only points at the record. Put it where yo
 
 ## Prove it before you hand off
 
-The author of a record cannot see its gaps, so a reader who has not seen your work must test it. Make a scratch copy of the repo outside the repo, and put two uncommitted changes in it:
+The author of a record cannot see its gaps, so a reader who has not seen your work must test it. Make a scratch copy of the repo outside the repo. It must hold your record and verification, also when they are not committed yet, so a new worktree or clone alone is not enough. Leave out what git ignores, such as build output: it is large, and a stale build can run in place of a change. Put two uncommitted changes in the copy:
 
 - one that breaks the property in the real code;
 - one refactor of covered code that changes no behavior.

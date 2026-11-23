@@ -46,7 +46,7 @@ Each `> ` line cites a line of the file by its text. The hash covers the text fr
 
 ## What keeps it checked
 
-**The hook, in the agent.** The install for Claude Code, Codex, and Pi sets it up. After the agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
+**The hook, in the agent.** The install for Claude Code, Codex, and Pi sets it up. Codex runs it only after you trust it in `/hooks`. The Cursor plugin has no hook. After the agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
 
 ```
 formal-proofs: this edit changed verified code, which no longer matches its record.
@@ -54,6 +54,8 @@ examples/counter/VERIFY.md: examples/counter/counter.py: cited line is missing o
 Before you finish, follow that record: make the verification describe the change and run
 the check. Only then run, from the root of the repo: sh .../drift.sh --sync examples/counter/VERIFY.md
 ```
+
+The hook sees only the edits that the agent makes with its edit tools. A change by a shell command, a merge, or a person gets no reminder, and the action in CI catches it.
 
 **The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. The [README](../README.md) shows the step, and this repo's own [CI](../.github/workflows/ci.yml) runs it on the example.
 

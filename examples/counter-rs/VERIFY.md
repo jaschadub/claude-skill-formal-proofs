@@ -16,12 +16,12 @@ A change to the order of these lines, to where the guard is dropped, or a new wr
 
 ```
 covered:
-  - examples/counter-rs/src/lib.rs 5bf5f6ab2ef8
+  - examples/counter-rs/src/lib.rs 26824ebac3bd
     > pub fn hit(&self)
     > self.count.lock()
     > let seen = *count
     > *count = seen + 1
-    > trace!("Write")
+    > trace!("Write"
 ```
 
 `drift.sh` compares the hash above with the text from the first cited line to the last. It is in the `maintain-formal-verification` skill of the `formal-proofs` plugin. Run it from the repo root: `sh <that skill's folder>/drift.sh`.
@@ -31,16 +31,16 @@ covered:
 | Rule | What it promises | Harm if it breaks |
 |------|------------------|-------------------|
 | `no_lost_hit` (loom), `NoLostHit` (model) | Every finished hit is counted. | The counter shows fewer hits than happened. |
-| The code stays inside the model. | Each step that a real run logs is a step that `examples/counter/Counter.tla` allows at that point. | The model passes while it describes code that no longer exists. |
+| The code stays inside the model. | Each step that a real run logs is a step that `examples/counter/Counter.tla` allows at that point, and it leaves the count that the model holds. | The model passes while it describes code that no longer exists. |
 
 ## Run the checks
 
 Run these from `examples/counter-rs`. The tools come from the `formal-proofs` plugin, https://github.com/jaschadub/skill-formal-proofs. `trace.sh` needs version 0.3.0 or later.
 
 1. **Every order, on the real code.** `RUSTFLAGS="--cfg loom" cargo test --release every_order`. [loom](https://docs.rs/loom) runs `no_lost_hit` once for each order in which two threads can take their steps. A pass is `test result: ok. 1 passed`. A run that reports 0 tests checked nothing: the `--cfg loom` flag was missing.
-2. **A real run against the model.** `TRACE_LOG=$PWD/target/trace.log cargo test --features trace real_run` runs three real threads and writes one line for each step. Then check the log with `trace.sh` from the `tla-check` skill: `sh <that skill's folder>/trace.sh ../counter/CounterTrace.tla target/trace.log`. A pass is `ok: the model follows all 9 events`.
+2. **A real run against the model.** `TRACE_LOG=$PWD/target/trace.log cargo test --features trace real_run` runs three real threads and writes one line for each step, with the count after it. Then check the log with `trace.sh` from the `tla-check` skill: `sh <that skill's folder>/trace.sh ../counter/CounterTrace.tla target/trace.log`. A pass is `ok: the model follows all 9 events`.
 
-The model itself has its own record, `examples/counter/VERIFY.md`. A pass of check 1 on a test that no one updated says nothing about a change to the code, so read the change against the table first.
+The model itself has its own record, `examples/counter/VERIFY.md`. Check 1 runs the real code, but only the calls that the test makes, and only through loom's types. A change that adds a writer of `count`, or a lock or an atomic from `std`, passes it unseen, so read the change against the table first.
 
 ## When a change touches the covered code
 

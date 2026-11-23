@@ -52,13 +52,15 @@ codex plugin marketplace add jaschadub/skill-formal-proofs
 codex plugin add formal-proofs@formal-proofs
 ```
 
+Then open `/hooks` in Codex and trust the plugin's hook. Codex does not run it until you do.
+
 ### Cursor
 
 ```sh
 git clone https://github.com/jaschadub/skill-formal-proofs ~/.cursor/plugins/local/formal-proofs
 ```
 
-Then restart Cursor, or run **Developer: Reload Window**. The plugin shows up under **Customize**. A team admin can instead import the repo URL as a team marketplace in the dashboard.
+Then restart Cursor, or run **Developer: Reload Window**. The plugin shows up under **Customize**. It brings the skills. The hook is not set up for Cursor, so use the GitHub Action to catch a change to verified code.
 
 ### Pi
 
@@ -82,6 +84,8 @@ Ask your agent in plain words:
 
 ```yaml
 - uses: actions/checkout@v4
+  with:
+    fetch-depth: 0 # so that a failure can list the commits since the last sync
 - uses: jaschadub/skill-formal-proofs@v0.3.0
   with:
     specs: formal/session/Session.tla
@@ -102,6 +106,7 @@ The tests need Java, Node 22.18 or later, and cargo.
 sh skills/tla-check/test.sh
 sh skills/maintain-formal-verification/test.sh
 sh hooks/test.sh
+node --test pi/remind.test.ts
 sh examples/counter-rs/test.sh
 cargo clippy --manifest-path examples/counter-rs/Cargo.toml --all-targets --features trace -- -D warnings
 (cd skills/statechart/scripts && npm install --no-package-lock && npm test)

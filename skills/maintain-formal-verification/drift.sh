@@ -9,13 +9,18 @@
 #       > async fn refresh(
 #       > session_lock(
 # Each "> " line cites one line of the file by a piece of its text, in the order the lines appear.
+# An entry and its "> " lines are indented by one space or more. The block ends at the first line that is
+# neither one of those nor blank.
 # The hash covers the text from the first cited line to the last, or the whole file when no line is cited.
 # Each report names the record, the file, and the lines of the stretch as they are now.
 # --sync writes the current hashes into the records. Run it only after the verification describes the code.
-# Exit code: 0 in sync, 1 covered code changed or a cited line was not found, 2 no record found.
+# Exit code: 0 in sync, 1 covered code changed, a cited line was not found, or a block names no file,
+# 2 no record found, or not run from the repo root.
 set -eu
 sync=
 if [ "${1:-}" = --sync ]; then sync=1; shift; fi
+prefix=$(git rev-parse --show-prefix 2>/dev/null) || prefix=
+[ -z "$prefix" ] || { echo "drift.sh: run it from the root of the repo, not from $prefix" >&2; exit 2; }
 # Paths are split on whitespace on purpose: no spaces in the path of a record or of covered code.
 # shellcheck disable=SC2046
 [ $# -gt 0 ] || set -- $(git ls-files -co --exclude-standard -- ':(glob)**/VERIFY.md')
@@ -24,9 +29,11 @@ trap 'rm -rf "$tmp"' EXIT
 
 # Print the text of file $1 from the first line cited in $tmp/cited to the last, and its line numbers
 # on stderr. If a cited line is missing or out of order, print its text and fail.
+# A CR at the end of a line is dropped, so that a checkout with CRLF line ends has the same hash.
 region() {
   awk -v cited="$tmp/cited" '
     BEGIN { while ((getline line < cited) > 0) want[++n] = line; i = 1 }
+    { sub(/\r$/, "") }
     n == 0 { print; next }
     i <= n && index($0, want[i]) { if (i++ == 1) first = NR }
     i > 1 { text = text $0 "\n" }
@@ -41,13 +48,22 @@ for rec in "$@"; do
   # One "A text" line for each cited line, then one "F path hash" line for the entry they belong to.
   awk '
     function flush() { if (path != "") printf "%sF %s %s\n", cited, path, hash; path = ""; cited = "" }
+    { sub(/\r$/, "") }
     /^covered:/ { flush(); on = 1; next }
-    on && /^  - [^ ]/ { flush(); path = $2; hash = $3; next }
-    on && /^    > / { cited = cited "A " substr($0, 7) "\n"; next }
+    on && /^[ \t]*$/ { next }
+    on && /^[ \t]+- [^ ]/ { flush(); path = $2; hash = $3; next }
+    on && /^[ \t]+> / { sub(/^[ \t]+> /, ""); cited = cited "A " $0 "\n"; next }
     { flush(); on = 0 }
     END { flush() }
   ' "$rec" > "$tmp/entries"
-  [ -s "$tmp/entries" ] || continue
+  if [ ! -s "$tmp/entries" ]; then
+    # A block that this script reads no entry from would pass as a record that covers nothing.
+    if grep -q '^covered:' "$rec"; then
+      echo "$rec: the covered block names no file: indent each '- path' entry and its '> text' lines"
+      status=1
+    fi
+    continue
+  fi
   [ "$status" = 1 ] || status=0
   drift=
   : > "$tmp/cited"
@@ -85,8 +101,12 @@ for rec in "$@"; do
   elif [ -n "$sync" ]; then
     awk -v hashes="$tmp/hashes" '
       /^covered:/ { on = 1; print; next }
-      on && /^  - [^ ]/ { getline hash < hashes; print "  - " $2 " " hash; next }
-      on && /^    > / { print; next }
+      on && /^[ \t\r]*$/ { print; next }
+      on && /^[ \t]+- [^ ]/ {
+        cr = sub(/\r$/, "") ? "\r" : ""; match($0, /^[ \t]+/); getline hash < hashes
+        print substr($0, 1, RLENGTH) "- " $2 " " hash cr; next
+      }
+      on && /^[ \t]+> / { print; next }
       { on = 0; print }
     ' "$rec" > "$tmp/new"
     cat "$tmp/new" > "$rec"

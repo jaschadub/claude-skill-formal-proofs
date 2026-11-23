@@ -5,7 +5,7 @@ description: "Use when a TLA+ spec must be run: to learn whether its invariants 
 
 # TLA+ check
 
-The lean way to run a TLA+ model. It answers one question: do the rules hold in every reachable state, and if not, what is the shortest path to the break. For a drawing of the state graph, use `statechart`.
+The lean way to run a TLA+ model. It answers one question: do the rules hold in every reachable state, and if not, what is the shortest path to the break. For a drawing of the state graph, there is the `statechart` skill. In some agents only the user can start it, with `/statechart`, so ask the user when you cannot load it.
 
 ## Run
 
@@ -67,7 +67,7 @@ A model is tied to the code by hand. A trace check ties it by a real run: a test
 Have the code write one line each time it does something that the model has an action for, as a TLA+ record:
 
 ```
-[action |-> "TakeLock", thread |-> "t1"]
+[action |-> "Write", thread |-> "t1", count |-> 1]
 ```
 
 Log what the code does, at every place where it does it: a line at each place that takes the lock, not one line for each call. Then a change that takes the lock twice shows in every run. A log that is written to match the model hides that change in almost every run.
@@ -82,9 +82,10 @@ EXTENDS Counter, Sequences, TraceLog
 VARIABLE traceAt
 
 Event(e) ==
-  \/ e.action = "TakeLock" /\ TakeLock(e.thread)
-  \/ e.action = "Read" /\ Read(e.thread)
-  \/ e.action = "Write" /\ Write(e.thread)
+  /\ \/ e.action = "TakeLock" /\ TakeLock(e.thread)
+     \/ e.action = "Read" /\ Read(e.thread)
+     \/ e.action = "Write" /\ Write(e.thread)
+  /\ count' = e.count
 
 TraceInit == Init /\ traceAt = 0
 TraceNext == traceAt < Len(TraceLog) /\ Event(TraceLog[traceAt + 1]) /\ traceAt' = traceAt + 1
@@ -103,7 +104,7 @@ sh <skill dir>/trace.sh TRACESPEC.tla LOG [CONFIG.cfg]
 | 0 | The model follows the whole log. |
 | 1 | The model cannot take an event. The output gives that event and a state of the model before it. Either the code changed and the model must follow, or the code has a bug. |
 | 12 | A rule of the model breaks in the run that the log describes. The output is TLC's, with the path. |
-| 2 | The log is empty, or the config lists `TraceUnfinished`. |
+| 2 | The check did not run: a file is missing, the log is empty, the config lists `TraceUnfinished`, a `TraceLog.tla` sits next to the trace spec, or `TraceInit` allows no first state. The output says which. |
 
 Show that the trace check can fail: delete one line from a log, or log a run of the code with a deliberate break, and see exit 1. An `Event` that allows too much follows every log. When the first run already fails, replay the event against the code before you change the trace spec: the code can be what is wrong.
 

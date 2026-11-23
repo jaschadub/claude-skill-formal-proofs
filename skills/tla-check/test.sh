@@ -28,6 +28,8 @@ expect 0 "$dir/Counter.tla" -coverage 1
 grep -q '^<Up line .*>: 3:3$' "$dir/out" || { cat "$dir/out"; echo "FAIL: no action counts with -coverage" >&2; exit 1; }
 expect 12 "$dir/Counter.tla" "$dir/Broken.cfg"
 grep -q "Invariant AtMostTwo is violated" "$dir/out" || { echo "FAIL: counterexample not printed" >&2; exit 1; }
+expect 2 "$dir/Missing.tla"
+grep -q 'no such file: .*Missing.tla' "$dir/out" || { cat "$dir/out"; echo "FAIL: a missing spec is not named" >&2; exit 1; }
 [ "$(ls "$dir")" = "$(printf 'Broken.cfg\nCounter.cfg\nCounter.tla\nout')" ] || { ls "$dir"; echo "FAIL: check.sh left files next to the spec" >&2; exit 1; }
 # A relative TLA2TOOLS or JAVA is relative to the caller's folder, not to the folder of the spec.
 mkdir "$dir/tools"
@@ -57,9 +59,14 @@ trace() {
 }
 has() { grep -q "$1" "$dir/out" || { cat "$dir/out"; echo "FAIL: $2" >&2; exit 1; }; }
 up='[action |-> "Up"]'
-printf '%s\n\n%s\n' "$up" "$up" > "$dir/log"
+printf '%s\n\n  \t\n%s\n' "$up" "$up" > "$dir/log"
 trace 0 "$dir/log"
 has '^ok: the model follows all 2 events' "trace not accepted"
+# A TraceLog.tla next to the trace spec would be read in place of the log.
+cp "$dir/Counter.tla" "$dir/TraceLog.tla"
+trace 2 "$dir/log"
+has 'TraceLog.tla' "a TraceLog.tla next to the trace spec is not refused"
+rm "$dir/TraceLog.tla"
 printf '%s\n%s\n%s\n%s\n' "$up" "$up" "$up" "$up" > "$dir/log"
 trace 1 "$dir/log"
 has 'follows the first 3 of 4 events' "the event that the model cannot take is not named"
@@ -70,4 +77,10 @@ trace 12 "$dir/log" "$dir/Strict.cfg"
 has 'Invariant AtMostTwo is violated' "broken rule not named"
 : > "$dir/log"
 trace 2 "$dir/log"
+trace 2 "$dir/no-such-log"
+# A trace spec with no first state is an error in the spec, not an event that the model cannot take.
+printf '%s\n' "$up" > "$dir/log"
+sed 's/^TraceInit == .*/TraceInit == Init \/\\ traceAt = 0 \/\\ x = 5/' "$dir/CounterTrace.tla" > "$dir/tmp" && mv "$dir/tmp" "$dir/CounterTrace.tla"
+trace 2 "$dir/log"
+has 'no first state' "a trace spec with no first state is not named"
 echo "ok"
