@@ -1,5 +1,6 @@
 # Copy to .github/workflows/formal-proofs.yml in a project that has a VERIFY.md record.
-# The job fails when verified code changed without a re-sync of its record, or when a model breaks a rule.
+# The job fails when verified code changed without a re-sync of its record, when a model breaks a rule,
+# or when a model cannot follow the log of a real run.
 name: formal-proofs
 on: [push, pull_request]
 jobs:
@@ -12,3 +13,4 @@ jobs:
       - uses: jaschadub/skill-formal-proofs@v0.2.0
         with:
           specs: formal/session/Session.tla # your models, separated by spaces
+          # traces: formal/session/SessionTrace.tla=target/trace.log # after a step that runs the test that writes the log

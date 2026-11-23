@@ -48,6 +48,8 @@ export function report(
     stop,
     drawing,
     states,
+    warnings,
+    idle,
   }: {
     spec: Spec;
     graph: Graph;
@@ -57,6 +59,8 @@ export function report(
     stop: Stop | undefined;
     drawing: { status: number | null } | undefined;
     states: { distinct: number; initial: number; complete: boolean; cut: boolean };
+    warnings: string[];
+    idle: { actions: string[]; complete: boolean };
   },
   found: Bug[],
   chart: Chart | undefined,
@@ -153,6 +157,19 @@ export function report(
         `TLC found a counterexample. It is in tlc-${rule.name}.out.`,
       );
   }
+  if (warnings.length)
+    out.push(
+      "",
+      "## TLC warnings",
+      "TLC printed this while it checked the rules. A rule can hold only because of the problem that a warning names.",
+      ...warnings.map(fenced),
+    );
+  if (idle.actions.length)
+    out.push(
+      "",
+      "## Actions that never ran",
+      `${idle.actions.join(", ")}. A rule can hold only because the action that breaks it never ran.${idle.complete ? "" : " TLC did not explore every state, so these actions can still run in a state that it did not reach."}`,
+    );
   if (holds.length) out.push("", "## Rules that hold", holds.join(", "));
   if (unchecked.length) out.push("", "## Rules not checked", unchecked.join(", "));
   if (unchecked.length && states.cut)

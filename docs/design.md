@@ -57,11 +57,14 @@ the check. Only then run, from the root of the repo: sh .../drift.sh --sync exam
 
 **The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. The [README](../README.md) shows the step, and this repo's own [CI](../.github/workflows/ci.yml) runs it on the example.
 
+**A trace of a real run.** A hash says that covered lines changed. A trace says whether the code still does what the model describes: a test runs the real code, the code logs each step, and `tla-check` checks that the model can take the same steps. The action runs it with the `traces` input. [`examples/counter-rs`](../examples/counter-rs) does this for Rust code, next to a check that runs the real code under every order of its threads.
+
 **By hand, anywhere.** From the root of your project:
 
 ```sh
 sh path/to/skills/maintain-formal-verification/drift.sh          # exit 1 when covered code changed
 sh path/to/skills/tla-check/check.sh formal/session/Session.tla  # exit 12 when a rule breaks
+sh path/to/skills/tla-check/trace.sh formal/session/SessionTrace.tla trace.log  # exit 1 when the code left the model
 ```
 
 ## Versions

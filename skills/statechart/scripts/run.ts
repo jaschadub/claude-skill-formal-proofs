@@ -185,7 +185,9 @@ const runToFiles = (
 
 async function findTlc(cwd: string) {
   const { TLA2TOOLS, JAVA } = process.env;
-  if (TLA2TOOLS) return { jar: TLA2TOOLS, java: JAVA || "java" };
+  // TLC runs in another folder, so resolve a path here. A bare name such as "java" stays on PATH.
+  const java = JAVA && /[/\\]/.test(JAVA) ? path.resolve(JAVA) : JAVA;
+  if (TLA2TOOLS) return { jar: path.resolve(TLA2TOOLS), java: java || "java" };
   const mise = (...args: string[]) =>
     runChild("mise", args, { cwd, env: { ...process.env, MISE_CEILING_PATHS: cwd } });
   const where = () =>
@@ -201,11 +203,11 @@ async function findTlc(cwd: string) {
   }
   return {
     jar: path.join(found[0].stdout.trim(), "tla2tools.jar"),
-    java: JAVA || found[1].stdout.trim(),
+    java: java || found[1].stdout.trim(),
   };
 }
 
-const exitClass = (status: number | null) =>
+const exitClass = (status: number | null): 0 | 1 | 2 =>
   status === 0 ? 0 : status === 11 || status === 12 || status === 13 ? 1 : 2;
 
 const tail = (r: FileResult) => {
@@ -340,6 +342,9 @@ export async function check(specFile: string, configFile: string): Promise<Check
       let first: FileResult | undefined;
       let stop: Stop | undefined;
       const states = { distinct: 0, initial: 0, complete: false, cut: false };
+      const warnings = new Set<string>();
+      const ran = new Map<string, boolean>();
+      let everyState = false;
       for (let k = 1; groups.length;) {
         const group: Rule[] = [];
         for (const rule of groups[0]) if (!verdicts.has(ruleKey(rule))) group.push(rule);
@@ -358,16 +363,23 @@ export async function check(specFile: string, configFile: string): Promise<Check
         const r = await runJava(name, "tlc2.TLC", [
           "-tool",
           ...PINNED_FLAGS,
+          "-coverage",
+          "0",
           ...(names(group, "deadlock").length ? [] : ["-deadlock"]),
           ...config(name, spec.written, extra),
           bounded ? "ChartBound" : spec.module,
         ]);
         first ??= r;
-        const { broke, distinct, initial } = readVerdict(messagesOf(r.output));
+        const verdict = readVerdict(messagesOf(r.output), bounded);
+        const { broke, distinct, initial } = verdict;
         states.distinct = Math.max(states.distinct, distinct);
         states.initial = Math.max(states.initial, initial);
         const rule = broke && brokenRule(group, broke);
         const cut = bounded && distinct >= RERUN_STATES;
+        for (const w of verdict.warnings) warnings.add(w);
+        for (const [action, made] of verdict.ran) ran.set(action, made || ran.get(action) === true);
+        if (verdict.ran.size && !cut && (r.status === 0 || (r.status === 13 && broke?.kind === "temporal")))
+          everyState = true;
         if (exitClass(r.status) === 2) {
           stop = stopOf(r);
           break;
@@ -396,7 +408,16 @@ export async function check(specFile: string, configFile: string): Promise<Check
           );
       }
       for (const rule of all) if (!verdicts.has(ruleKey(rule))) decide(rule, "not checked");
-      return { first: first!, stop, states };
+      // ponytail: names only; two modules that declare the same action name show as one name.
+      const never = new Set<string>();
+      for (const [action, made] of ran) if (!made) never.add(action.slice(0, action.indexOf(" line ")));
+      return {
+        first: first!,
+        stop,
+        states,
+        warnings: [...warnings],
+        idle: { actions: [...never].sort(), complete: everyState },
+      };
     };
     fs.writeFileSync(path.join(dir, "ChartBound.tla"), boundRun(spec.module));
     const judged = await judge();
@@ -426,6 +447,8 @@ export async function check(specFile: string, configFile: string): Promise<Check
       stop: judged.stop,
       states: judged.states,
       messages: messagesOf(judged.first.output),
+      warnings: judged.warnings,
+      idle: judged.idle,
       rules: checked,
     };
     if (judged.states.distinct <= CHART_STATES) {

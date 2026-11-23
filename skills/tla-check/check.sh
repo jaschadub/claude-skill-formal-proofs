@@ -8,6 +8,7 @@ VERSION=1.7.4
 SHA256=936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88
 
 [ $# -ge 1 ] || { echo "usage: sh check.sh SPEC.tla [CONFIG.cfg] [extra TLC options]" >&2; exit 2; }
+absolute() { echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; }
 java=${JAVA:-java}
 command -v "$java" >/dev/null || { echo "tla-check needs Java 11 or later on PATH, or JAVA set to a java binary" >&2; exit 127; }
 
@@ -19,8 +20,10 @@ if [ ! -f "$jar" ]; then
   [ "${sum%% *}" = "$SHA256" ] || { rm -f "$jar.part"; echo "tla2tools.jar checksum mismatch; nothing was installed" >&2; exit 1; }
   mv "$jar.part" "$jar"
 fi
+# TLC runs in the folder of the spec, so a path that is relative to this folder must not stay relative.
+jar=$(absolute "$jar")
+case $java in */*) java=$(absolute "$java") ;; esac
 
-absolute() { echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; }
 spec=$(absolute "$1"); shift
 case ${1:--} in -*) cfg=${spec%.tla}.cfg ;; *) cfg=$(absolute "$1"); shift ;; esac
 

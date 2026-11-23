@@ -7,17 +7,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh examples/counter-rs/*.sh
       - run: sh skills/tla-check/test.sh
       - run: sh skills/maintain-formal-verification/test.sh
       - run: sh hooks/test.sh
+      - name: Chart scripts pass the strict type check and their tests
+        working-directory: skills/statechart/scripts
+        run: npm install --no-package-lock --no-audit --no-fund && npm test
       - name: Every manifest parses and carries the same version
         run: |
           manifests=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .cursor-plugin/plugin.json .agents/plugins/marketplace.json package.json hooks/hooks.json"
           for file in $manifests; do python3 -m json.tool "$file" > /dev/null; done
           test "$(grep -h '"version"' $manifests | tr -d ' ,' | sort -u | wc -l)" = 1
+      - name: The Rust example passes its checks, and its fault breaks them
+        run: |
+          cargo clippy --manifest-path examples/counter-rs/Cargo.toml --all-targets --features trace -- -D warnings
+          sh examples/counter-rs/test.sh
       # The same step that a project adds to its own CI; see examples/github-workflow.yml.
-      - name: Check the example record and model with the action
+      - name: Check the example records, model, and trace with the action
         uses: ./
         with:
           specs: examples/counter/Counter.tla
+          traces: examples/counter/CounterTrace.tla=examples/counter-rs/target/trace.log
+      - name: The example's fault breaks the rule that its record names
+        run: |
+          sed 's/Faults = {}/Faults = {"no_lock"}/' examples/counter/Counter.cfg > "$RUNNER_TEMP/Fault.cfg"
+          status=0
+          sh skills/tla-check/check.sh examples/counter/Counter.tla "$RUNNER_TEMP/Fault.cfg" > "$RUNNER_TEMP/fault.out" || status=$?
+          test "$status" = 12
+          grep -q '^Error: Invariant NoLostHit is violated\.$' "$RUNNER_TEMP/fault.out"

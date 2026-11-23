@@ -1,8 +1,10 @@
 # Verify the hit counter
 
-`hit()` in `counter.py` reads the count and writes it back plus one. Two threads that do this at the same moment can both read the same count, and one hit is lost. A test rarely meets that timing. The TLA+ model in `Counter.tla` checks every order of steps for three threads.
+`hit()` in `counter.py` reads the count and writes it back plus one. Two threads that do this at the same moment can both read the same count, and one hit is lost. The example has no test. A test that calls `hit()` from several threads would assert the final count, and it would rarely meet that timing. The TLA+ model in `Counter.tla` checks every order of steps for three threads.
 
 This folder is a worked example of the record that `create-formal-verification` leaves in a project. The CI of this repo checks it with the action in `action.yml`.
+
+`CounterTrace.tla` lets the `tla-check` skill check a log of a real run against this model. `examples/counter-rs` writes such a log from the same counter in Rust.
 
 ## Does your change touch it?
 

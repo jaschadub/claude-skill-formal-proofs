@@ -6,12 +6,12 @@ Your coding agent turns rules like “retrying a payment must never charge a cus
 |-------|--------------|
 | `create-formal-verification` | Finds the code where a bug costs the most, checks one rule of it against every order of events, and writes a record (`VERIFY.md`) so that the next agent can recheck it. |
 | `maintain-formal-verification` | After merges and refactors, brings the check back in line with the code, and says whether a failure is a real bug. |
-| `tla-check` | Runs a TLA+ model. Needs only Java. |
+| `tla-check` | Runs a TLA+ model, and checks a log of what the real code did against it. Needs only Java. |
 | `statechart` | Runs a TLA+ model and draws it as a chart. Needs a TypeScript runtime and mise. |
 
 A hook reminds the agent when it edits verified code, and a GitHub Action catches the same in CI.
 
-See [how it works](docs/design.md) and a [worked example](examples/counter).
+See [how it works](docs/design.md), a [worked example](examples/counter), and [the same in Rust](examples/counter-rs).
 
 ## Install
 
@@ -66,11 +66,13 @@ The build fails when verified code changed without a recheck, or when a model br
 sh skills/tla-check/test.sh
 sh skills/maintain-formal-verification/test.sh
 sh hooks/test.sh
-shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh
+sh examples/counter-rs/test.sh
+(cd skills/statechart/scripts && npm install --no-package-lock && npm test)
+shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh examples/counter-rs/*.sh
 ```
 
 ## Credits
 
-`create-formal-verification`, `maintain-formal-verification`, and `statechart` are adapted from the `pstack` plugin in [cursor/plugins](https://github.com/cursor/plugins) at commit `7a58391` (MIT, © 2026 Lauren Tan). Each of those skill folders carries the original license.
+`create-formal-verification`, `maintain-formal-verification`, and `statechart` are adapted from the `pstack` plugin in [cursor/plugins](https://github.com/cursor/plugins) at commit `7a58391` (MIT, © 2026 Lauren Tan). Each of those skill folders carries the original license. The chart fixes for warnings, actions that never ran, tool paths, and comments follow pull requests 1254, 1303, 1017, and 1222 there.
 
 MIT © 2026 Jascha Wanger ([jascha.me](https://jascha.me))

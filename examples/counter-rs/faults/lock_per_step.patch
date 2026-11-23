@@ -1,0 +1,19 @@
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -28,10 +28,14 @@
+ 
+ impl Counter {
+     pub fn hit(&self) {
++        let seen = {
++            let count = self.count.lock().unwrap();
++            trace!("TakeLock");
++            trace!("Read");
++            *count
++        };
+         let mut count = self.count.lock().unwrap();
+         trace!("TakeLock");
+-        let seen = *count;
+-        trace!("Read");
+         *count = seen + 1;
+         trace!("Write");
+     }

@@ -1,6 +1,6 @@
 ---
 name: tla-check
-description: "Use when a TLA+ spec must be run: to learn whether its invariants hold and to get the shortest counterexample, with only Java installed. Use the statechart skill instead only when a drawing of the state graph is wanted."
+description: "Use when a TLA+ spec must be run: to learn whether its invariants hold and to get the shortest counterexample, or to check a log of what the real code did against the spec, with only Java installed. Use the statechart skill instead only when a drawing of the state graph is wanted."
 ---
 
 # TLA+ check
@@ -28,7 +28,7 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 
 | Exit code | Meaning |
 |-----------|---------|
-| 0 | Every rule holds in every reachable state. The output ends with the count of distinct states. |
+| 0 | Every rule holds in every reachable state. The last lines of the output give the count of distinct states. |
 | 12 | An invariant breaks. The output names it and gives the shortest path. |
 | 11 | Deadlock: a reachable state has no step out. |
 | 13 | A temporal PROPERTY breaks. |
@@ -58,7 +58,56 @@ The exit code of that command is the one from `grep`, not from TLC, so use it on
 <AllDone line 38, col 1 to line 38, col 7 of module Counter>: 0:6
 ```
 
-An action with `0:0` never ran, so no rule was tested against it. Either explain it, such as a fault switch that is off in this config, or fix the model. An action that changes nothing, such as `AllDone`, finds no new state but still shows how often it ran.
+An action with `0:0` never ran, so no rule was tested against it. An action under `\E` over an empty set is missing from the list, so compare the list with `Next`. Read each `Warning:` line of the first run too: TLC warns when an action changes a variable that it also lists as UNCHANGED, and that action never runs. Either explain it, such as a fault switch that is off in this config, or fix the model. An action that changes nothing, such as `AllDone`, finds no new state but still shows how often it ran.
+
+## Check that the model follows the real code
+
+A model is tied to the code by hand. A trace check ties it by a real run: a test runs the code, the code logs each step, and TLC checks that the model can take the same steps in the same order. It catches a change that made the code leave the model, also in a run where no rule broke.
+
+Have the code write one line each time it does something that the model has an action for, as a TLA+ record:
+
+```
+[action |-> "TakeLock", thread |-> "t1"]
+```
+
+Log what the code does, at every place where it does it: a line at each place that takes the lock, not one line for each call. Then a change that takes the lock twice shows in every run. A log that is written to match the model hides that change in almost every run.
+
+Write the line while the step still holds what makes it one indivisible step, such as the lock. If not, two threads can log in another order than they ran. Do not move a lock or hold it for longer to make room for the line, because that changes the code that you check. Log the values that the rules are about too, such as the count, and compare them in `Event`.
+
+Next to the model, write a trace spec that takes one event of the log at a time:
+
+```tla
+---- MODULE CounterTrace ----
+EXTENDS Counter, Sequences, TraceLog
+VARIABLE traceAt
+
+Event(e) ==
+  \/ e.action = "TakeLock" /\ TakeLock(e.thread)
+  \/ e.action = "Read" /\ Read(e.thread)
+  \/ e.action = "Write" /\ Write(e.thread)
+
+TraceInit == Init /\ traceAt = 0
+TraceNext == traceAt < Len(TraceLog) /\ Event(TraceLog[traceAt + 1]) /\ traceAt' = traceAt + 1
+TraceUnfinished == traceAt < Len(TraceLog)
+====
+```
+
+Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes the first from the log and reads the other two. Its config has `INIT TraceInit`, `NEXT TraceNext`, the constants, and the rules of the model as INVARIANT. Leave `TraceUnfinished` out of the config, because the script adds it. Give a constant that the log names as strings, such as `Threads = {"t1", "t2"}`. For a step that the code cannot log, such as a lost reply, add `\/ LoseReply /\ UNCHANGED traceAt` to `TraceNext`. The run must fit that config: the same ids, and no more work than the model allows, such as one hit for each thread. Start each run with an empty log.
+
+```sh
+sh <skill dir>/trace.sh TRACESPEC.tla LOG [CONFIG.cfg]
+```
+
+| Exit code | Meaning |
+|-----------|---------|
+| 0 | The model follows the whole log. |
+| 1 | The model cannot take an event. The output gives that event and a state of the model before it. Either the code changed and the model must follow, or the code has a bug. |
+| 12 | A rule of the model breaks in the run that the log describes. The output is TLC's, with the path. |
+| 2 | The log is empty, or the config lists `TraceUnfinished`. |
+
+Show that the trace check can fail: delete one line from a log, or log a run of the code with a deliberate break, and see exit 1. An `Event` that allows too much follows every log. When the first run already fails, replay the event against the code before you change the trace spec: the code can be what is wrong.
+
+A trace covers only the runs that the test made. It shows that those runs stay inside the model, and the model check shows that every run inside the model keeps the rules. Neither shows that the code never leaves the model in a run that no test made.
 
 ## Hand off
 

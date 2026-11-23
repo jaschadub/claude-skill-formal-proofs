@@ -34,7 +34,11 @@ const decode = (text: string) =>
 function parseXml(xml: string) {
   const document: XmlNode = { tag: "", text: "", children: [] };
   const open = [document];
-  for (const [, close, tag, empty, text] of xml.matchAll(
+  // SANY wraps comments in CDATA. A < or > there, as in <<1, 2>>, is text and not a tag.
+  const source = xml.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, (_, body: string) =>
+    body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+  );
+  for (const [, close, tag, empty, text] of source.matchAll(
     /<(\/?)([^\s/>?!]+)[^>]*?(\/?)>|<[?!][^>]*>|([^<]+)/g,
   )) {
     const parent = open[open.length - 1];

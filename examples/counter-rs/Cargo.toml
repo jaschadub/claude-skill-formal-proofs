@@ -1,0 +1,16 @@
+[package]
+name = "counter"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[features]
+# Log each step of hit(), so that a real run can be checked against the model. Off in a normal build.
+trace = []
+
+[target.'cfg(loom)'.dependencies]
+loom = "0.7"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }

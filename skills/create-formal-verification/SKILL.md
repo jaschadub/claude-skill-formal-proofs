@@ -15,15 +15,19 @@ Answer from the codebase, and ask the user only what you cannot observe. If the 
 
 A good target is a promise the code makes, where a break harms users and tests rarely reach the case that breaks it. Choose the strongest such target in the repo, not the one that is easiest to verify.
 
+Before you build anything, check the target against the tests. Find the test that comes closest to the promise, and name what it asserts and the case that it does not reach, such as "the bank accepted the charge, but the confirmation timed out". When no test comes close, say that. When you cannot name a case that the tests miss, the tests may already cover the promise: say so, and choose another target unless the user named this one.
+
 ## Let the question choose the tool
 
 Pick the tool that answers the question at the lowest cost: a model checker, a proof assistant, an SMT-backed verifier, or another tool. Prefer a tool that runs on the real code over one that runs on a description of it, because a description can drift from the code and the real code cannot.
 
-- **Can events happen in a bad order?** First look for a checker that runs the real code under every order of steps, such as loom or shuttle for Rust, Coyote for .NET, or Java PathFinder. Such a checker sees one process. When the order involves other processes, the disk, or the network, or when no such checker fits the language, use a model checker over a small model of the design. TLA+ is the default for that in any language.
+- **Can events happen in a bad order?** First look for a checker that runs the real code under every order of steps, such as loom for Rust, Coyote for .NET, or Java PathFinder. Some of these try random orders and not every order: say which yours does. Such a checker sees one process. When the order involves other processes, the disk, or the network, or when no such checker fits the language, use a model checker over a small model of the design. TLA+ is the default for that in any language.
 - **Does the code behave for every input,** as with memory safety, overflow, or a data-structure invariant? Use a verifier that runs on the code. If no verifier runs on this language, say so, and test the real code with generated inputs, not a hand model of the function.
 - **Must the property hold at every size,** where a bound is not enough? That can need a proof.
 
 Prefer a tool that the repo's developers can install and run, and tell the user why you chose it.
+
+When the code is Rust, read [rust.md](rust.md) before you choose. It says which checker answers which question, what a pass of each one means, and where a model of Rust code goes wrong.
 
 ## What makes it good
 
@@ -60,6 +64,7 @@ Then run `sh <maintain-formal-verification skill dir>/drift.sh --sync <record>` 
 
 The record also holds:
 
+- why this target: the closest test, what it asserts, and the case that it does not reach;
 - which code maps to which part of the verification;
 - each rule, with what it promises and the harm when it breaks, in one plain sentence each;
 - how to run the check, what a pass looks like, and where `drift.sh` is: in the `maintain-formal-verification` skill, run from the repo root. Say that a pass on a verification that no one updated says nothing about a change to the covered code;
@@ -74,9 +79,9 @@ The steps for a change serve an author, and a reviewer of a change that has not 
 - When a change adds a step, a rule that names steps must name the new step too. That does not weaken the rule, as long as its plain sentence stays true.
 - When a change has a bug, the updated verification stays with that change, as a patch or on its branch, and no one syncs it.
 
-If the check is a TLA+ model, tell the next agent to run it with the [`tla-check`](../tla-check/SKILL.md) skill. It needs only Java, and it prints whether each rule holds and the shortest path to a break, with only the variables that changed at each step. For a model small enough to draw, about 500 states or fewer, the [`statechart`](../statechart/SKILL.md) skill also draws how the system moves between states; it needs a TypeScript runtime and mise. Refer to both by name, and say that they come from the `formal-proofs` plugin and which version you used, so that the next agent can find them. Their commands, options, and file paths change between releases and machines, so copy none of them into the record or its scripts.
+If the check is a TLA+ model, tell the next agent to run it with the [`tla-check`](../tla-check/SKILL.md) skill. It needs only Java, and it prints whether each rule holds and the shortest path to a break, with only the variables that changed at each step. For a model small enough to draw, about 500 states or fewer, the [`statechart`](../statechart/SKILL.md) skill also draws how the system moves between states; it needs a TypeScript runtime and mise. When a test can run the covered code, also add a trace check, as `tla-check` describes: the code logs each step of a real run, and TLC checks that the model can take the same steps. That ties the model to the code by more than a hash, so put its command in the record next to the check. Refer to these skills by name, and say that they come from the `formal-proofs` plugin and which version you used, so that the next agent can find them. Their commands, options, and file paths change between releases and machines, so copy none of them into the record or its scripts.
 
-Give the model a switch for each deliberate break that you used to show a rule failing, such as a `Faults` constant that is empty in the committed config. List each fault in the record with the rules it must break, so that the next agent can confirm in one run each that the check can still fail. Also list each step that never runs in the committed config, with the reason, such as a step behind a switch that is off. Any other step that never runs is an error in the model.
+Give the model a switch for each deliberate break that you used to show a rule failing, such as a `Faults` constant that is empty in the committed config. A check that runs the real code has no such switch: keep each break as a patch file next to the record, and list it with the test that must fail. List each fault in the record with the rules it must break, so that the next agent can confirm in one run each that the check can still fail. Also list each step that never runs in the committed config, with the reason, such as a step behind a switch that is off. Any other step that never runs is an error in the model.
 
 Then write a project-local skill that only points at the record. Put it where your agent reads project skills: `.claude/skills/<name>/SKILL.md` for Claude Code, and `.agents/skills/<name>/SKILL.md` for Codex, Pi, and most other agents. Its frontmatter names the covered files and functions and says when to use it, because without frontmatter the skill never registers. Its body is one line that tells the agent to read the record and follow it. Run `git check-ignore -q` on that file. If it exits 0, git ignores the file here, so say in the hand-off that the pointer stays on this machine and the record is what is shared.
 
@@ -97,7 +102,7 @@ Last, delete the scratch copy, and confirm that the check in the repo is where i
 
 Tell the user:
 
-- what you verified, which tool you used and why, and the bounds;
+- what you verified, the case that the tests do not reach, which tool you used and why, and the bounds;
 - what the check found, in plain words;
 - the known weaknesses of the design, apart from what the check leaves out;
 - how to run the check;
