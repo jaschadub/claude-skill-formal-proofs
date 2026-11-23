@@ -24,6 +24,8 @@ expect() {
   [ "$got" = "$want" ] || { cat "$dir/out"; echo "FAIL: expected exit $want, got $got: $*" >&2; exit 1; }
 }
 expect 0 "$dir/Counter.tla"
+expect 0 "$dir/Counter.tla" -coverage 1
+grep -q '^<Up line .*>: 3:3$' "$dir/out" || { cat "$dir/out"; echo "FAIL: no action counts with -coverage" >&2; exit 1; }
 expect 12 "$dir/Counter.tla" "$dir/Broken.cfg"
 grep -q "Invariant AtMostTwo is violated" "$dir/out" || { echo "FAIL: counterexample not printed" >&2; exit 1; }
 [ "$(ls "$dir")" = "$(printf 'Broken.cfg\nCounter.cfg\nCounter.tla\nout')" ] || { ls "$dir"; echo "FAIL: check.sh left files next to the spec" >&2; exit 1; }

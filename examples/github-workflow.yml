@@ -1,0 +1,14 @@
+# Copy to .github/workflows/formal-proofs.yml in a project that has a VERIFY.md record.
+# The job fails when verified code changed without a re-sync of its record, or when a model breaks a rule.
+name: formal-proofs
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # so that a failure can list the commits since the last sync
+      - uses: jaschadub/skill-formal-proofs@v0.2.0
+        with:
+          specs: formal/session/Session.tla # your models, separated by spaces

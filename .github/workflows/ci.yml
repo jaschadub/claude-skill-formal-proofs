@@ -7,5 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: shellcheck skills/tla-check/*.sh skills/maintain-formal-verification/drift.sh
+      - run: shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh
       - run: sh skills/tla-check/test.sh
+      - run: sh skills/maintain-formal-verification/test.sh
+      - run: sh hooks/test.sh
+      # The same step that a project adds to its own CI; see examples/github-workflow.yml.
+      - name: Check the example record and model with the action
+        uses: ./
+        with:
+          specs: examples/counter/Counter.tla

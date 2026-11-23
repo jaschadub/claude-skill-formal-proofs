@@ -1,0 +1,17 @@
+{
+  "description": "After an edit to verified code that no longer matches its VERIFY.md record, remind the agent to recheck it.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/remind.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

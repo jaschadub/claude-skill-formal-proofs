@@ -1,0 +1,19 @@
+name: Formal proofs check
+description: Fail when verified code no longer matches its VERIFY.md record, or when a TLA+ model breaks a rule.
+inputs:
+  specs:
+    description: TLA+ specs to check with TLC, separated by spaces. Each uses the .cfg file next to it.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Verified code matches its records
+      shell: sh
+      run: sh "$GITHUB_ACTION_PATH/skills/maintain-formal-verification/drift.sh"
+    - name: Models hold
+      if: inputs.specs != ''
+      shell: sh
+      env:
+        SPECS: ${{ inputs.specs }}
+      run: for spec in $SPECS; do sh "$GITHUB_ACTION_PATH/skills/tla-check/check.sh" "$spec"; done

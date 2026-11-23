@@ -1,11 +1,11 @@
-# formal-proofs
+# Catch bugs your tests miss
 
-Skills for coding agents that formally verify the code where a bug costs the most, and keep that verification true to the code as it changes.
+Your coding agent turns rules like “retrying a payment must never charge a customer twice” into formal checks you can rerun as the code changes.
 
 | Skill | What it does |
 |-------|--------------|
-| `create-formal-verification` | Finds the code where a bug costs the most and tests reach the least, verifies one property of it, and generates a project-local verify skill. |
-| `maintain-formal-verification` | After merges and refactors, brings the verification back in line with the code and says whether each failure is drift or a real bug. Includes `drift.sh`, which lists changes to verified code since the last sync. |
+| `create-formal-verification` | Finds the code where a bug costs the most and tests reach the least, verifies one property of it, and writes a record (`VERIFY.md`) next to the verification that tells the next agent how to recheck it. |
+| `maintain-formal-verification` | After merges and refactors, brings the verification back in line with the code and says whether each failure is drift or a real bug. Includes `drift.sh`, which reports verified code that changed since the last sync. |
 | `tla-check` | Checks a TLA+ model with TLC from one shell script. Needs only Java; prints pass or fail and the shortest path to a break. |
 | `statechart` | Checks a TLA+ model with TLC and draws it as a Mermaid statechart. Heavier: needs a TypeScript runtime and mise. |
 
@@ -24,27 +24,75 @@ flowchart TD
     bug --> check
     fixmodel --> check
     check -->|"every rule holds"| faults["Switch on each fault: its rules must break"]
-    faults --> skill["Project verify skill records the sync commit and covered code"]
-    skill --> change["Covered code changes"]
-    change --> drift["drift.sh lists changes since the sync commit"]
-    drift --> maintain["maintain-formal-verification updates the model"]
+    faults --> record["VERIFY.md records the covered lines and their hash"]
+    record --> change["Covered code changes"]
+    change --> drift["drift.sh, the hook, or CI reports the change"]
+    drift --> maintain["The agent updates the model from the code"]
     maintain --> check
 ```
 
-A pass counts only if the check can still fail, so each model carries faults that must break named rules. The verify skill lives in the project (`.claude/skills/verify-<name>/`) and tells the agent which code is covered and how to recheck it.
+A pass counts only if the check can still fail, so each model carries faults that must break named rules, and every step of the model must be seen to run.
+
+## The record
+
+The verification lives in the project as a committed file, `VERIFY.md`, next to the model. It holds the rules, the command, the faults, the limits, and the lines of code that the model depends on:
+
+```
+covered:
+  - examples/counter/counter.py 49d00fd4737e
+    > def hit():
+    > with lock:
+    > seen = count
+    > count = seen + 1
+```
+
+Each `> ` line cites a line of the file by its text. The hash covers the text from the first cited line to the last. `drift.sh` stays quiet for an edit outside that stretch, reports an edit inside it, and names a cited line that is missing or moved. `drift.sh --sync` writes the new hash, and the agent runs it only after the model describes the changed code and the check passes.
+
+[`examples/counter`](examples/counter) is a complete worked example: the code, the model, its config, and the record.
+
+## Keep it checked
+
+Three things make the check run without anyone remembering it.
+
+**The hook, in Claude Code.** The plugin installs it. After an agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
+
+```
+formal-proofs: this edit changed verified code. examples/counter/counter.py no longer
+matches the record in examples/counter/VERIFY.md (cited line is missing or moved: with lock:).
+Before you finish, follow that record: make the verification describe the change, run the
+check, and only then run: sh .../drift.sh --sync examples/counter/VERIFY.md
+```
+
+**The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. Copy [`examples/github-workflow.yml`](examples/github-workflow.yml) into your project, or add the step to a job you have:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: jaschadub/skill-formal-proofs@v0.2.0
+  with:
+    specs: formal/session/Session.tla
+```
+
+This repo's own [CI](.github/workflows/ci.yml) runs the same step on the example.
+
+**By hand, anywhere.** From the root of your project:
+
+```sh
+sh path/to/skills/maintain-formal-verification/drift.sh          # exit 1 when covered code changed
+sh path/to/skills/tla-check/check.sh formal/session/Session.tla  # exit 12 when a rule breaks
+```
 
 ## Install
 
 ### Claude Code
 
 ```
-/plugin install formal-proofs --marketplace jaschadub/claude-skill-formal-proofs
+/plugin install formal-proofs --marketplace jaschadub/skill-formal-proofs
 ```
 
 On versions before 2.1.275, add the marketplace first:
 
 ```
-/plugin marketplace add jaschadub/claude-skill-formal-proofs
+/plugin marketplace add jaschadub/skill-formal-proofs
 /plugin install formal-proofs@formal-proofs
 ```
 
@@ -59,9 +107,9 @@ The repo carries a `.cursor-plugin/plugin.json`; add it as a plugin from this re
 The skills are plain `SKILL.md` folders. Link them into the shared skills directory:
 
 ```sh
-git clone https://github.com/jaschadub/claude-skill-formal-proofs.git
+git clone https://github.com/jaschadub/skill-formal-proofs.git
 mkdir -p ~/.agents/skills
-ln -s "$PWD"/claude-skill-formal-proofs/skills/* ~/.agents/skills/
+ln -s "$PWD"/skill-formal-proofs/skills/* ~/.agents/skills/
 ```
 
 ## Requirements
@@ -74,12 +122,14 @@ ln -s "$PWD"/claude-skill-formal-proofs/skills/* ~/.agents/skills/
 
 ```sh
 sh skills/tla-check/test.sh
-shellcheck skills/tla-check/*.sh skills/maintain-formal-verification/drift.sh
+sh skills/maintain-formal-verification/test.sh
+sh hooks/test.sh
+shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh
 claude plugin validate .
 ```
 
 ## Credits
 
-`create-formal-verification`, `maintain-formal-verification`, and `statechart` are adapted from the `pstack` plugin in [cursor/plugins](https://github.com/cursor/plugins) at commit `7a58391` (MIT, © 2026 Lauren Tan). Each of those skill directories carries the original license. The upstream `statechart` test suite is not included. `tla-check` and `drift.sh` are new.
+`create-formal-verification`, `maintain-formal-verification`, and `statechart` are adapted from the `pstack` plugin in [cursor/plugins](https://github.com/cursor/plugins) at commit `7a58391` (MIT, © 2026 Lauren Tan). Each of those skill directories carries the original license. The upstream `statechart` test suite is not included. `tla-check`, `drift.sh`, the `VERIFY.md` record, the hook, and the GitHub Action are new.
 
 MIT © 2026 Jascha Wanger ([jascha.me](https://jascha.me))

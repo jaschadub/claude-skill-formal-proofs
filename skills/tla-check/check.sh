@@ -22,7 +22,7 @@ fi
 
 absolute() { echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; }
 spec=$(absolute "$1"); shift
-if [ $# -ge 1 ]; then cfg=$(absolute "$1"); shift; else cfg=${spec%.tla}.cfg; fi
+case ${1:--} in -*) cfg=${spec%.tla}.cfg ;; *) cfg=$(absolute "$1"); shift ;; esac
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
