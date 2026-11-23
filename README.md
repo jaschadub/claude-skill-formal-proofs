@@ -6,9 +6,10 @@ Claude Code skills for formally verifying code and keeping that verification tru
 |-------|--------------|
 | `/create-formal-verification` | Finds the code where a bug costs the most and tests reach the least, verifies one property of it, and generates a project-local verify skill. |
 | `/maintain-formal-verification` | After merges and refactors, brings the verification back in line with the code and says whether each failure is drift or a real bug. |
+| `/tla-check` | Checks a TLA+ model with TLC from one shell script. Needs only Java; prints pass or fail and the shortest path to a break. |
 | `/statechart` | Checks a TLA+ model with TLC and draws it as a Mermaid statechart, with the shortest path to each rule violation. |
 
-All three are user-invoked only (`disable-model-invocation: true`).
+All four are user-invoked only (`disable-model-invocation: true`).
 
 ## Install
 
@@ -16,6 +17,8 @@ All three are user-invoked only (`disable-model-invocation: true`).
 git clone https://github.com/jaschadub/claude-skill-formal-proofs.git
 ln -s "$PWD"/claude-skill-formal-proofs/skills/* ~/.claude/skills/
 ```
+
+`/tla-check` needs Java 11+ and downloads the checksum-pinned TLC jar on first use.
 
 `/statechart` needs Node 22.18+, Bun 1.1.5+, or Deno 2+. Its first run installs Java and TLC with [mise](https://mise.jdx.dev) and needs the network; set `TLA2TOOLS` and `JAVA` to use your own.
 

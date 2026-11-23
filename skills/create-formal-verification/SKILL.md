@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Create a formal verification skill
 
-<!-- Adapted from cursor/plugins pstack (MIT, (c) 2026 Lauren Tan); see LICENSE. -->
+<!-- Adapted from cursor/plugins pstack (MIT, (c) 2026 Lauren Tan). Modifications (c) 2026 Jascha Wanger (jascha.me). See LICENSE. -->
 
 A test checks the cases that someone thought to write. Formal verification checks every case in a stated scope: every order of steps in a model, every input up to a bound, or every input. This skill finds the part of the repo where that matters most, verifies one property of it, and leaves a project-local skill that lets the next agent check a change against that property. Write that skill for an agent who reads it cold, mid-change, and has never seen your work. The user must be able to trust the result and act on it without learning the verification language.
 
@@ -34,7 +34,9 @@ Pick the tool that answers the question at the lowest cost: a model checker, a p
 
 Write a project-local skill at `.claude/skills/<name>/SKILL.md` with frontmatter that names the area and says when to use it. Without frontmatter, the skill never registers. From the skill alone, the next agent must be able to tell whether a change touches the verified code, run the check, tell a real bug from a modeling error, and update the verification when a change is intended. Put the coverage record and the sync commit in the skill, and tell the next agent to move the sync commit forward only after it confirms that the verification describes the code at the new commit. Use this repo's real commands, paths, and nouns, and leave no placeholders.
 
-If the check is a TLA+ model, tell the next agent to read every result with the [`/statechart`](../statechart/SKILL.md) skill. It shows each invariant violation the checker finds as its shortest path in plain words. When the check passes, `/statechart` draws a chart of how the system moves between states. Refer to `/statechart` by name. Its commands, options, and file paths change between releases and machines, so copy none of them into the generated skill or its scripts.
+If the check is a TLA+ model, tell the next agent to run it with the [`/tla-check`](../tla-check/SKILL.md) skill. It needs only Java, and it prints whether each rule holds and the shortest path to a break, with only the variables that changed at each step. For a model small enough to draw, about 500 states or fewer, the [`/statechart`](../statechart/SKILL.md) skill also draws how the system moves between states; it needs a TypeScript runtime and mise. Refer to both by name. Their commands, options, and file paths change between releases and machines, so copy none of them into the generated skill or its scripts.
+
+Give the model a switch for each deliberate break that you used to show a rule failing, such as a `Faults` constant that is empty in the committed config. List each fault in the generated skill with the rules it must break, so that the next agent can confirm in one run each that the check can still fail.
 
 ## Prove it before you hand off
 

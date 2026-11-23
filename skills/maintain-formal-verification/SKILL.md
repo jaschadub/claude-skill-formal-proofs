@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Maintain a formal verification skill
 
-<!-- Adapted from cursor/plugins pstack (MIT, (c) 2026 Lauren Tan); see LICENSE. -->
+<!-- Adapted from cursor/plugins pstack (MIT, (c) 2026 Lauren Tan). Modifications (c) 2026 Jascha Wanger (jascha.me). See LICENSE. -->
 
 A formal check proves a property of what it describes. When the code changes and the verification does not, the check can keep passing while it describes code that no longer exists. That pass is the dangerous case, because it looks like a proof. This skill is the upkeep loop for a verify skill that `/create-formal-verification` generated, or for any project-local skill (in `.claude/skills/` or a plugin's `skills/`) that runs a model checker, prover, or code-level verifier against named code. The project-local skill handles a change that an agent makes while it uses that skill. This skill handles the changes that skipped it: merges, edits made without the skill, and drift that builds up across many commits.
 
