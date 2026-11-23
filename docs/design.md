@@ -27,4 +27,43 @@ flowchart TD
 
 A pass counts only if the check can still fail, so each model carries faults that must break named rules, and every step of the model must be seen to run.
 
-The [README](../README.md) describes the record and the three ways the check runs without anyone remembering it. [`examples/counter`](../examples/counter) is a complete worked example.
+## The record
+
+The verification lives in the project as a committed file, `VERIFY.md`, next to the model. It holds the rules, the command, the faults, the limits, and the lines of code that the model depends on:
+
+```
+covered:
+  - examples/counter/counter.py 49d00fd4737e
+    > def hit():
+    > with lock:
+    > seen = count
+    > count = seen + 1
+```
+
+Each `> ` line cites a line of the file by its text. The hash covers the text from the first cited line to the last. `drift.sh` stays quiet for an edit outside that stretch, reports an edit inside it, and names a cited line that is missing or moved. `drift.sh --sync` writes the new hash, and the agent runs it only after the model describes the changed code and the check passes.
+
+[`examples/counter`](../examples/counter) is a complete worked example: the code, the model, its config, and the record.
+
+## What keeps it checked
+
+**The hook, in the agent.** The install for Claude Code, Codex, and Pi sets it up. After the agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
+
+```
+formal-proofs: this edit changed verified code, which no longer matches its record.
+examples/counter/VERIFY.md: examples/counter/counter.py: cited line is missing or moved: with lock:.
+Before you finish, follow that record: make the verification describe the change and run
+the check. Only then run, from the root of the repo: sh .../drift.sh --sync examples/counter/VERIFY.md
+```
+
+**The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. The [README](../README.md) shows the step, and this repo's own [CI](../.github/workflows/ci.yml) runs it on the example.
+
+**By hand, anywhere.** From the root of your project:
+
+```sh
+sh path/to/skills/maintain-formal-verification/drift.sh          # exit 1 when covered code changed
+sh path/to/skills/tla-check/check.sh formal/session/Session.tla  # exit 12 when a rule breaks
+```
+
+## Versions
+
+The version is in five manifests, one for each way to install, and CI checks that they agree. `tla-check` pins TLC 1.7.4 by checksum and keeps the jar in `~/.cache/tla-check`.
