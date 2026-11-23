@@ -11,27 +11,7 @@ Your coding agent turns rules like “retrying a payment must never charge a cus
 
 The first three can be invoked by the agent when a task calls for them. `statechart` runs only when you ask for it.
 
-## How it works
-
-```mermaid
-flowchart TD
-    code["Code where a bug costs the most"] --> create["create-formal-verification"]
-    create --> model["TLA+ model, rules, and deliberate faults"]
-    model --> check["tla-check or statechart runs TLC"]
-    check -->|"a rule breaks"| replay{"Can the path happen in the real code?"}
-    replay -->|"yes"| bug["Real bug: fix the code"]
-    replay -->|"no"| fixmodel["Model is wrong: fix the model"]
-    bug --> check
-    fixmodel --> check
-    check -->|"every rule holds"| faults["Switch on each fault: its rules must break"]
-    faults --> record["VERIFY.md records the covered lines and their hash"]
-    record --> change["Covered code changes"]
-    change --> drift["drift.sh, the hook, or CI reports the change"]
-    drift --> maintain["The agent updates the model from the code"]
-    maintain --> check
-```
-
-A pass counts only if the check can still fail, so each model carries faults that must break named rules, and every step of the model must be seen to run.
+[How it works](docs/design.md) shows the whole loop as a diagram.
 
 ## The record
 
