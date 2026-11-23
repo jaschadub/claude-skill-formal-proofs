@@ -11,6 +11,28 @@ Skills for coding agents that formally verify the code where a bug costs the mos
 
 The first three can be invoked by the agent when a task calls for them. `statechart` runs only when you ask for it.
 
+## How it works
+
+```mermaid
+flowchart TD
+    code["Code where a bug costs the most"] --> create["create-formal-verification"]
+    create --> model["TLA+ model, rules, and deliberate faults"]
+    model --> check["tla-check or statechart runs TLC"]
+    check -->|"a rule breaks"| replay{"Can the path happen in the real code?"}
+    replay -->|"yes"| bug["Real bug: fix the code"]
+    replay -->|"no"| fixmodel["Model is wrong: fix the model"]
+    bug --> check
+    fixmodel --> check
+    check -->|"every rule holds"| faults["Switch on each fault: its rules must break"]
+    faults --> skill["Project verify skill records the sync commit and covered code"]
+    skill --> change["Covered code changes"]
+    change --> drift["drift.sh lists changes since the sync commit"]
+    drift --> maintain["maintain-formal-verification updates the model"]
+    maintain --> check
+```
+
+A pass counts only if the check can still fail, so each model carries faults that must break named rules. The verify skill lives in the project (`.claude/skills/verify-<name>/`) and tells the agent which code is covered and how to recheck it.
+
 ## Install
 
 ### Claude Code
