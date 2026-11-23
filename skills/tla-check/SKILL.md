@@ -118,6 +118,8 @@ Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes t
 sh <skill dir>/trace.sh TRACESPEC.tla LOG [CONFIG.cfg]
 ```
 
+`LOG` can be a folder. The script then checks every `.log` file under it, each distinct log once, and its last lines say how many logs there were, how many were distinct, and how often each step was logged. Many runs that all write the same log show one order only, so make the runs differ. A step with a low count is one that the runs rarely reach.
+
 | Exit code | Meaning |
 |-----------|---------|
 | 0 | The model follows the whole log. |

@@ -22,8 +22,8 @@ Before you build anything, check the target against the tests. Find the test tha
 Pick the tool that answers the question at the lowest cost: a model checker, a proof assistant, an SMT-backed verifier, or another tool. Prefer a tool that runs on the real code over one that runs on a description of it, because a description can drift from the code and the real code cannot.
 
 - **Can events happen in a bad order?** First look for a checker that runs the real code under every order of steps, such as loom for Rust, Coyote for .NET, or Java PathFinder. Some of these try random orders and not every order: say which yours does. Trust a checker that you have not used before only after it catches a fault that you seed. Such a checker sees one process. When the order involves other processes, the disk, or the network, or when no such checker fits the language, use a model checker over a small model of the design. TLA+ is the default for that in any language.
-- **Does the code behave for every input,** as with memory safety, overflow, or a data-structure invariant? Use a verifier that runs on the code. If no verifier runs on this language, say so, and test the real code with generated inputs, not a hand model of the function.
-- **Must the property hold at every size,** where a bound is not enough? That can need a proof.
+- **Does the code behave for every input,** as with memory safety, overflow, or a data-structure invariant? Use a verifier that runs on the code. If no verifier runs on this language, or none finishes on this code, say so, and test the real code with generated inputs, not a hand model of the function.
+- **Must the property hold at every size,** where a bound is not enough? That needs a proof, and a prover wants contracts written into the product code, or works on a restated copy of it. Do not start there. First run the bounded check on the real code, and say plainly that it is not a proof for every size. Give the reason why larger sizes behave the same as an argument that a reviewer can read, and say that no tool checked it. Offer the proof as a next step that needs the user's consent.
 
 Prefer a tool that the repo's developers can install and run, and tell the user why you chose it.
 
@@ -106,6 +106,7 @@ Tell the user:
 
 - what you verified, the case that the tests do not reach, which tool you used and why, and the bounds;
 - what the check found, in plain words;
+- each rule in one plain sentence, with the question whether that is what the system must always do. You chose the rules from the code, and only the user can say that they are the right ones. A rule that the user rejects is a wrong specification, however well it is checked;
 - the known weaknesses of the design, apart from what the check leaves out;
 - how to run the check;
 - who tested the record: a fresh agent, or only you.

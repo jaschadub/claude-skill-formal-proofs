@@ -34,7 +34,7 @@ A hook reminds the agent when it edits verified code, and a GitHub Action catche
 
 For Rust and Python code, the agent also gets a guide: which checker answers which question, and where a model of code in that language goes wrong.
 
-See [how it works](docs/design.md), a [worked example](examples/counter), and [the same in Rust](examples/counter-rs).
+See [how it works](docs/design.md), a [worked example](examples/counter), [the same in Rust](examples/counter-rs), and the [changelog](CHANGELOG.md).
 
 ## Install
 

@@ -14,6 +14,7 @@ Each of these runs the real code, except the last. Say in the record and the han
 | The same, in code that is too large for loom, or in async code on Tokio? | [shuttle](https://docs.rs/shuttle), with `shuttle-tokio` | `check_random` and `check_pct` try random orders. A pass is evidence and not a proof. `check_dfs` tries every order, and fits small tests only. Atomics behave as `SeqCst`. |
 | Does a state machine keep its rules for every sequence of events? | A test that walks the real transition function through every reachable state, or [stateright](https://docs.rs/stateright) | Every reachable state, when the transitions are one pure function over an enum and the states are finite. With a depth limit, every sequence up to that depth. |
 | Does a function hold for every input: no panic, no overflow, no index out of bounds, an invariant of a data structure? | [Kani](https://model-checking.github.io/kani/) | Every input, up to the unwind bound of each loop. It compiles concurrent code as if it ran on one thread, so it says nothing about the order of steps. |
+| Must a function hold for input of every size, where the bound of Kani is not enough? | [Verus](https://github.com/verus-lang/verus), Creusot, or Prusti | A proof for every size. Each needs contracts written into the product code, and trusts its own description of `std`. Ask the user before you use one, and run the bounded check first. |
 | Does `unsafe` code have undefined behavior? | Miri: `cargo +nightly miri test` | Only the runs that the tests make. It is not exhaustive. |
 | Can processes, the disk, the network, a crash, or a timeout take steps in a bad order? | A TLA+ model with `tla-check`, tied to the code by a trace | Every order in the model. The trace shows that the runs of a test stay inside the model. |
 
@@ -37,9 +38,9 @@ When the covered code is a `match` on a state enum, cite the arms, and say wheth
 
 ## Keep each fault as a patch
 
-A check on the real code has no `Faults` constant. Keep each deliberate break as a patch in `faults/` next to the record, and list it with the test that must fail. Do not put a fault behind a cargo feature, because that ships the bug in the crate.
+A check on the real code has no `Faults` constant. Keep each deliberate break as a patch in `faults/` next to the record, and list it with the test that must fail. Do not put a fault behind a cargo feature, because that ships the bug in the crate. A rule that the code breaks is not a fault: keep its test apart from the tests that pass, such as behind a feature of a harness crate, so that the committed check passes and the finding can be run again.
 
-Make the patch with `git diff --relative` in the folder of the crate. To use one, copy the crate to a scratch folder outside the repo, without `target`, run `git apply` there, and run the check in the copy. Do not share a `target` folder between the copy and the crate: cargo can then run the binary of the other one, and a check passes or fails on code that it did not build. A patch that no longer applies means that the covered code changed, so make it again.
+Make the patch with `git diff --relative` in the folder of the crate, or from the repo root when the harness sits in another crate than the covered code. To use one, copy the crate to a scratch folder outside the repo, without `target`, run `git apply` there, and run the check in the copy. Do not share a `target` folder between the copy and the crate: cargo can then run the binary of the other one, and a check passes or fails on code that it did not build. A patch that no longer applies means that the covered code changed, so make it again.
 
 ## Tie a model to the code with a trace
 

@@ -59,7 +59,7 @@ The hook sees only the edits that the agent makes with its edit tools. A change 
 
 **The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. With the `faults` input, it also fails when a deliberate fault no longer breaks its rule, so a model cannot lose the ability to fail without notice. The [README](../README.md) shows the step, and this repo's own [CI](../.github/workflows/ci.yml) runs it on the example.
 
-**A trace of a real run.** A hash says that covered lines changed. A trace says whether the code still does what the model describes: a test runs the real code, the code logs each step, and `tla-check` checks that the model can take the same steps. The action runs it with the `traces` input. [`examples/counter-rs`](../examples/counter-rs) does this for Rust code, next to a check that runs the real code under every order of its threads.
+**A trace of a real run.** A hash says that covered lines changed. A trace says whether the code still does what the model describes: a test runs the real code, the code logs each step, and `tla-check` checks that the model can take the same steps. The action runs it with the `traces` input. Given a folder of logs from many runs, it checks each distinct log and says how many orders the runs covered. [`examples/counter-rs`](../examples/counter-rs) does this for Rust code, next to a check that runs the real code under every order of its threads.
 
 **By hand, anywhere.** From the root of your project:
 
@@ -72,4 +72,4 @@ sh path/to/skills/tla-check/fault.sh formal/session/Session.tla no_lock NoSpentT
 
 ## Versions
 
-The version is in five manifests, one for each way to install, and CI checks that they agree. `tla-check` pins TLC 1.7.4 by checksum and keeps the jar in `~/.cache/tla-check`.
+The version is in five manifests, one for each way to install, and CI checks that they agree, that the docs pin that version, and that [CHANGELOG.md](../CHANGELOG.md) has an entry for it. `tla-check` pins TLC 1.7.4 by checksum and keeps the jar in `~/.cache/tla-check`.

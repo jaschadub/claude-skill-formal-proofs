@@ -10,7 +10,7 @@ inputs:
     required: false
     default: ""
   traces:
-    description: Logs of real runs to check against a model, separated by spaces, each as TRACESPEC.tla=LOG. An earlier step of the job must write each log.
+    description: Logs of real runs to check against a model, separated by spaces, each as TRACESPEC.tla=LOG. LOG is a file, or a folder of .log files. An earlier step of the job must write each log.
     required: false
     default: ""
 runs:

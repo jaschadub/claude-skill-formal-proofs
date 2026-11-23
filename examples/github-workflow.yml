@@ -3,6 +3,10 @@
 # when a deliberate fault no longer breaks its rule, or when a model cannot follow the log of a real run.
 name: formal-proofs
 on: [push, pull_request]
+# For many runs of the real code against the model, add a nightly run, and a step before the action that
+# writes one log for each run into a folder. Then give that folder as the LOG of `traces`.
+#   schedule:
+#     - cron: "0 3 * * *"
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -14,4 +18,4 @@ jobs:
         with:
           specs: formal/session/Session.tla # your models, separated by spaces
           # faults: formal/session/Session.tla:no_lock=NoSpentTokenSent # each fault of the record with a rule that it must break, once for each rule
-          # traces: formal/session/SessionTrace.tla=target/trace.log # after a step that runs the test that writes the log
+          # traces: formal/session/SessionTrace.tla=target/trace.log # a log, or a folder of logs, after the step that writes it

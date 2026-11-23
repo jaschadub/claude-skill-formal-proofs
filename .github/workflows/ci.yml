@@ -19,7 +19,7 @@ jobs:
         run: npm install --no-package-lock --no-audit --no-fund && npm test
       - name: The Pi extension adds the reminder to an edit
         run: node --test pi/remind.test.ts
-      - name: Every manifest parses, five carry the same version, and the docs pin that version
+      - name: Every manifest parses, five carry the same version, and the docs and the changelog name it
         run: |
           manifests=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .cursor-plugin/plugin.json .agents/plugins/marketplace.json package.json hooks/hooks.json"
           for file in $manifests hooks/cursor.json; do python3 -m json.tool "$file" > /dev/null; done
@@ -29,6 +29,7 @@ jobs:
           version=$(echo "$versions" | head -n 1 | cut -d'"' -f4)
           grep -q "skill-formal-proofs@v$version\$" README.md
           grep -q "skill-formal-proofs@v$version\$" examples/github-workflow.yml
+          grep -q "^## $version - " CHANGELOG.md
       - name: The Rust example passes its checks, and its fault breaks them
         run: |
           cargo clippy --manifest-path examples/counter-rs/Cargo.toml --all-targets --features trace -- -D warnings
