@@ -1,4 +1,25 @@
-# Catch bugs your tests miss
+<p align="center">
+  <img src="docs/logo.png" alt="Formal Proofs logo: a tuxedo with a bow tie" width="200">
+</p>
+
+<h1 align="center">Skill: Formal Proofs</h1>
+
+<p align="center"><strong>Catch bugs your tests miss.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/jaschadub/skill-formal-proofs/actions/workflows/ci.yml"><img src="https://github.com/jaschadub/skill-formal-proofs/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/jaschadub/skill-formal-proofs/tags"><img src="https://img.shields.io/github/v/tag/jaschadub/skill-formal-proofs?label=version" alt="Latest version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <a href="#install"><img src="https://img.shields.io/badge/Claude_Code-plugin-black" alt="Claude Code plugin"></a>
+  <a href="#install"><img src="https://img.shields.io/badge/Codex-plugin-black" alt="Codex plugin"></a>
+  <a href="#install"><img src="https://img.shields.io/badge/Cursor-plugin-black" alt="Cursor plugin"></a>
+  <a href="#install"><img src="https://img.shields.io/badge/Pi-package-black" alt="Pi package"></a>
+  <a href="#install"><img src="https://img.shields.io/badge/Other_agents-SKILL.md-black" alt="Other agents: SKILL.md folders"></a>
+  <a href="#check-it-in-ci"><img src="https://img.shields.io/badge/GitHub_Action-CI_check-black" alt="GitHub Action: CI check"></a>
+</p>
 
 Your coding agent turns rules like “retrying a payment must never charge a customer twice” into formal checks you can rerun as the code changes.
 
