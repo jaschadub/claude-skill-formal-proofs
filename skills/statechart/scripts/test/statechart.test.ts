@@ -59,6 +59,31 @@ test("a rule that holds only because an action never ran says so above the verdi
   }
 });
 
+test("with java on PATH and the jar that tla-check keeps, it does not call mise", () => {
+  assert.ok(fs.existsSync(jar), `no tla2tools.jar at ${jar}`);
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "statechart-test-")));
+  try {
+    fs.writeFileSync(path.join(dir, "Vac.tla"), VAC);
+    fs.writeFileSync(path.join(dir, "Vac.cfg"), "SPECIFICATION Spec\nINVARIANT NeverPaidTwice\n");
+    fs.mkdirSync(path.join(dir, "cache/tla-check"), { recursive: true });
+    fs.symlinkSync(jar, path.join(dir, "cache/tla-check/tla2tools-1.7.4.jar"));
+    fs.mkdirSync(path.join(dir, "bin"));
+    fs.writeFileSync(path.join(dir, "bin/mise"), '#!/bin/sh\necho "mise was called" >&2\nexit 99\n', { mode: 0o755 });
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      XDG_CACHE_HOME: path.join(dir, "cache"),
+      PATH: `${path.join(dir, "bin")}${path.delimiter}${process.env.PATH}`,
+    };
+    delete env.TLA2TOOLS;
+    delete env.JAVA;
+    const r = spawnSync("sh", [launcher, "Vac.tla", "--config", "Vac.cfg", "--out", "out"], { cwd: dir, encoding: "utf8", env });
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(fs.existsSync(path.join(dir, "out/report.md")));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // From cursor/plugins pull request 1222. SANY wraps comments in CDATA, and a comment can hold <<1, 2>>.
 test("a comment with < and > in it does not hide the variables after it", () => {
   const sany = readSany(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>

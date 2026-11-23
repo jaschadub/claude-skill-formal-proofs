@@ -17,5 +17,6 @@
     "concurrency"
   ],
   "displayName": "Formal Proofs",
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "hooks": "./hooks/cursor.json"
 }

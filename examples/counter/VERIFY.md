@@ -53,7 +53,7 @@ These steps are for your own change, and for a change that you review before it 
 
 ## Faults that must break a rule
 
-Set the fault in a copy of the config in a scratch folder outside the repo, such as `Faults = {"no_lock"}`, and check the spec with that copy.
+Set the fault in a copy of the config in a scratch folder outside the repo, such as `Faults = {"no_lock"}`, and check the spec with that copy. From version 0.4.0, `tla-check` does this in one run for a fault and a rule.
 
 | Fault | The break in the code | Rules that must break |
 |-------|-----------------------|-----------------------|

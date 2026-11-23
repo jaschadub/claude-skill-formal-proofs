@@ -28,7 +28,7 @@ Your coding agent turns rules like “retrying a payment must never charge a cus
 | `create-formal-verification` | Finds the code where a bug costs the most, checks one rule of it against every order of events, and writes a record (`VERIFY.md`) so that the next agent can recheck it. |
 | `maintain-formal-verification` | After merges and refactors, brings the check back in line with the code, and says whether a failure is a real bug. |
 | `tla-check` | Runs a TLA+ model, and checks a log of what the real code did against it. Needs only Java. |
-| `statechart` | Runs a TLA+ model and draws it as a chart. Needs a TypeScript runtime and mise. |
+| `statechart` | Runs a TLA+ model and draws it as a chart. Needs Java and a TypeScript runtime. |
 
 A hook reminds the agent when it edits verified code, and a GitHub Action catches the same in CI.
 
@@ -60,7 +60,7 @@ Then open `/hooks` in Codex and trust the plugin's hook. Codex does not run it u
 git clone https://github.com/jaschadub/skill-formal-proofs ~/.cursor/plugins/local/formal-proofs
 ```
 
-Then restart Cursor, or run **Developer: Reload Window**. The plugin shows up under **Customize**. It brings the skills. The hook is not set up for Cursor, so use the GitHub Action to catch a change to verified code.
+Then restart Cursor, or run **Developer: Reload Window**. The plugin shows up under **Customize**. It brings the skills and the hook.
 
 ### Pi
 
@@ -79,6 +79,7 @@ Ask your agent in plain words:
 - “Formally verify the token refresh code.”
 - “Is the model still true to the code?”
 - “Check a real run of the code against the model.”
+- “Draw the model as a chart.”
 
 ## Check it in CI
 
@@ -91,12 +92,12 @@ Ask your agent in plain words:
     specs: formal/session/Session.tla
 ```
 
-The build fails when verified code changed without a recheck, or when a model breaks a rule. A `traces` input also fails it when a model cannot follow the log of a real run. [`examples/github-workflow.yml`](examples/github-workflow.yml) is a full workflow to copy.
+The build fails when verified code changed without a recheck, or when a model breaks a rule. A `traces` input also fails it when a model cannot follow the log of a real run, and a `faults` input when a deliberate fault no longer breaks its rule. [`examples/github-workflow.yml`](examples/github-workflow.yml) is a full workflow to copy.
 
 ## Requirements
 
 - Java 11 or later, and git. The first check downloads the TLA+ tools once.
-- `statechart` only: Node 22.18+, Bun, or Deno, and [mise](https://mise.jdx.dev).
+- `statechart` only: Node 22.18+, Bun, or Deno. Without Java on `PATH`, it also needs [mise](https://mise.jdx.dev).
 
 ## Development
 

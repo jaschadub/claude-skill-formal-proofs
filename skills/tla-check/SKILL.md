@@ -1,11 +1,11 @@
 ---
 name: tla-check
-description: "Use when a TLA+ spec must be run: to learn whether its invariants hold and to get the shortest counterexample, or to check a log of what the real code did against the spec, with only Java installed. Use the statechart skill instead only when a drawing of the state graph is wanted."
+description: "Use when a TLA+ spec must be run: to learn whether its invariants hold and to get the shortest counterexample, to show that a deliberate fault still breaks its rule, or to check a log of what the real code did against the spec, with only Java installed. Use the statechart skill instead only when a drawing of the state graph is wanted."
 ---
 
 # TLA+ check
 
-The lean way to run a TLA+ model. It answers one question: do the rules hold in every reachable state, and if not, what is the shortest path to the break. For a drawing of the state graph, there is the `statechart` skill. In some agents only the user can start it, with `/statechart`, so ask the user when you cannot load it.
+The lean way to run a TLA+ model. It answers one question: do the rules hold in every reachable state, and if not, what is the shortest path to the break. For a drawing of the state graph, use `statechart`.
 
 ## Run
 
@@ -59,6 +59,22 @@ The exit code of that command is the one from `grep`, not from TLC, so use it on
 ```
 
 An action with `0:0` never ran, so no rule was tested against it. An action under `\E` over an empty set is missing from the list, so compare the list with `Next`. Read each `Warning:` line of the first run too: TLC warns when an action changes a variable that it also lists as UNCHANGED, and that action never runs. Either explain it, such as a fault switch that is off in this config, or fix the model. An action that changes nothing, such as `AllDone`, finds no new state but still shows how often it ran.
+
+## Check that a fault still breaks its rule
+
+A pass counts only if the check can fail. A model shows that with a switch for each deliberate fault: a `Faults` constant that is `{}` in the config. Switch one fault on, and require that one rule breaks:
+
+```sh
+sh <skill dir>/fault.sh SPEC.tla FAULT RULE [CONFIG.cfg]
+```
+
+The script checks a copy of the config with `Faults = {"FAULT"}` and with RULE as its only rule. For a fault that must break two rules, run it once for each.
+
+| Exit code | Meaning |
+|-----------|---------|
+| 0 | The fault breaks the rule. |
+| 1 | The rule holds with the fault on. The model can no longer fail there, so fix the model before you trust a pass. |
+| 2 | The config has no `Faults = {}`, or it does not list the rule. |
 
 ## Check that the model follows the real code
 

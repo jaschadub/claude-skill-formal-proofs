@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (c) 2026 Jascha Wanger (jascha.me). MIT license; see LICENSE.
 # After an edit to verified code that no longer matches its VERIFY.md record, tell the agent.
-# usage: sh remind.sh < HOOK.json    a hook of Claude Code or Codex: JSON in, JSON out
+# usage: sh remind.sh < HOOK.json    a hook of Claude Code, Codex, or Cursor: JSON in, JSON out
 #        sh remind.sh FILE...        any other agent, such as Pi: prints the reminder as plain text
 # It prints nothing when no edited file is covered code, or when the covered code still matches.
 plugin=$(cd "$(dirname "$0")/.." && pwd) || exit 0
@@ -35,9 +35,10 @@ hits=$(printf '%s\n' "$files" | while IFS= read -r file; do [ -z "$file" ] || re
 [ -n "$hits" ] || exit 0
 records=$(printf '%s\n' "$hits" | sed 's/: .*//' | sort -u | tr '\n' ' ')
 text="formal-proofs: this edit changed verified code, which no longer matches its record. $(printf '%s' "$hits" | tr '\n' ';' | sed 's/;/; /g'). Before you finish, follow that record: make the verification describe the change and run the check. Only then run, from the root of the repo: sh \"$drift\" --sync ${records% }"
-if [ -z "$event" ]; then
-  printf '%s\n' "$text"
-else
-  printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' "$event" \
-    "$(printf '%s' "$text" | tr -d '[:cntrl:]' | sed 's/[\\"]/\\&/g')"
-fi
+json=$(printf '%s' "$text" | tr -d '[:cntrl:]' | sed 's/[\\"]/\\&/g')
+case $event in
+  '') printf '%s\n' "$text" ;;
+  # Cursor names the event in camel case, and reads the reminder from another field.
+  postToolUse) printf '{"additional_context":"%s"}\n' "$json" ;;
+  *) printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' "$event" "$json" ;;
+esac

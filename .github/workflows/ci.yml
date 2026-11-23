@@ -22,7 +22,7 @@ jobs:
       - name: Every manifest parses, five carry the same version, and the docs pin that version
         run: |
           manifests=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .cursor-plugin/plugin.json .agents/plugins/marketplace.json package.json hooks/hooks.json"
-          for file in $manifests; do python3 -m json.tool "$file" > /dev/null; done
+          for file in $manifests hooks/cursor.json; do python3 -m json.tool "$file" > /dev/null; done
           versions=$(grep -h '"version"' $manifests | tr -d ' ,')
           test "$(echo "$versions" | wc -l)" = 5
           test "$(echo "$versions" | sort -u | wc -l)" = 1
@@ -34,15 +34,9 @@ jobs:
           cargo clippy --manifest-path examples/counter-rs/Cargo.toml --all-targets --features trace -- -D warnings
           sh examples/counter-rs/test.sh
       # The same step that a project adds to its own CI; see examples/github-workflow.yml.
-      - name: Check the example records, model, and trace with the action
+      - name: Check the example records, model, fault, and trace with the action
         uses: ./
         with:
           specs: examples/counter/Counter.tla
+          faults: examples/counter/Counter.tla:no_lock=NoLostHit
           traces: examples/counter/CounterTrace.tla=examples/counter-rs/target/trace.log
-      - name: The example's fault breaks the rule that its record names
-        run: |
-          sed 's/Faults = {}/Faults = {"no_lock"}/' examples/counter/Counter.cfg > "$RUNNER_TEMP/Fault.cfg"
-          status=0
-          sh skills/tla-check/check.sh examples/counter/Counter.tla "$RUNNER_TEMP/Fault.cfg" > "$RUNNER_TEMP/fault.out" || status=$?
-          test "$status" = 12
-          grep -q '^Error: Invariant NoLostHit is violated\.$' "$RUNNER_TEMP/fault.out"

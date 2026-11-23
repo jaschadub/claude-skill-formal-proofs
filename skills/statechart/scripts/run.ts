@@ -66,6 +66,11 @@ export function* fileLines(file: string) {
 
 const TLC_TOOL =
   "http:tla2tools[url=https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar,checksum=sha256:936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88]@1.7.4";
+// The same jar, where the tla-check skill keeps it after its first run.
+const TLA_CHECK_JAR = path.join(
+  process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"),
+  "tla-check/tla2tools-1.7.4.jar",
+);
 const JAVA_TOOL = "java@temurin-25";
 export const PINNED_FLAGS = ["-workers", "1", "-fp", "0", "-lncheck", "final"];
 const SANY_ERRORS = /^\*\*\* ?(?:Errors|Abort messages|Parse Error)/m;
@@ -188,6 +193,9 @@ async function findTlc(cwd: string) {
   // TLC runs in another folder, so resolve a path here. A bare name such as "java" stays on PATH.
   const java = JAVA && /[/\\]/.test(JAVA) ? path.resolve(JAVA) : JAVA;
   if (TLA2TOOLS) return { jar: path.resolve(TLA2TOOLS), java: java || "java" };
+  // With that jar and a java, mise is not needed.
+  if (fs.existsSync(TLA_CHECK_JAR) && (java || (await runChild("java", ["-version"], { cwd, env: process.env })).status === 0))
+    return { jar: TLA_CHECK_JAR, java: java || "java" };
   const mise = (...args: string[]) =>
     runChild("mise", args, { cwd, env: { ...process.env, MISE_CEILING_PATHS: cwd } });
   const where = () =>
@@ -197,7 +205,7 @@ async function findTlc(cwd: string) {
     const r = await mise("install", JAVA_TOOL, TLC_TOOL);
     if (r.status !== 0)
       throw new Error(
-        `Cannot find TLC: mise install failed: ${r.error?.message ?? r.stderr.trim()}\nOr set TLA2TOOLS to the path of tla2tools.jar, and JAVA to a java binary (Java 11 or later).`,
+        `Cannot find TLC: mise install failed: ${r.error?.message ?? r.stderr.trim()}\nOr put Java 11 or later on PATH and run the tla-check skill once, which downloads the jar. Or set TLA2TOOLS to the path of tla2tools.jar, and JAVA to a java binary.`,
       );
     found = await where();
   }

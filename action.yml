@@ -1,8 +1,12 @@
 name: Formal proofs check
-description: Fail when verified code no longer matches its VERIFY.md record, when a TLA+ model breaks a rule, or when a model cannot follow a log of a real run.
+description: Fail when verified code no longer matches its VERIFY.md record, when a TLA+ model breaks a rule, when a deliberate fault no longer breaks its rule, or when a model cannot follow a log of a real run.
 inputs:
   specs:
     description: TLA+ specs to check with TLC, separated by spaces. Each uses the .cfg file next to it.
+    required: false
+    default: ""
+  faults:
+    description: Deliberate faults that must each break a rule, separated by spaces, each as SPEC.tla:FAULT=RULE. List a fault once for each rule that it must break. The .cfg file next to the spec holds Faults = {}.
     required: false
     default: ""
   traces:
@@ -21,6 +25,16 @@ runs:
       env:
         SPECS: ${{ inputs.specs }}
       run: for spec in $SPECS; do sh "$GITHUB_ACTION_PATH/skills/tla-check/check.sh" "$spec"; done
+    - name: Each fault still breaks its rule
+      if: inputs.faults != ''
+      shell: sh
+      env:
+        FAULTS: ${{ inputs.faults }}
+      run: |
+        for item in $FAULTS; do
+          rest=${item#*:}
+          sh "$GITHUB_ACTION_PATH/skills/tla-check/fault.sh" "${item%%:*}" "${rest%%=*}" "${rest#*=}"
+        done
     - name: Models follow the logs of real runs
       if: inputs.traces != ''
       shell: sh

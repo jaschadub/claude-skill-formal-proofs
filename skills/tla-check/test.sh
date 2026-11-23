@@ -39,6 +39,35 @@ printf '#!/bin/sh\nexec java "$@"\n' > "$dir/tools/java"
 chmod +x "$dir/tools/java"
 (cd "$dir/tools" && TLA2TOOLS=tla2tools.jar JAVA=./java expect 0 "$dir/Counter.tla")
 
+# fault.sh: a deliberate fault must break the rule that is named for it, or the check cannot fail.
+cat > "$dir/Faulty.tla" <<'TLA'
+---- MODULE Faulty ----
+EXTENDS Naturals
+CONSTANT Faults
+VARIABLE x
+Limit == IF "too_far" \in Faults THEN 4 ELSE 3
+Init == x = 0
+Next == (x < Limit /\ x' = x + 1) \/ (x = Limit /\ UNCHANGED x)
+AtMostThree == x <= 3
+NotNegative == x >= 0
+====
+TLA
+printf 'CONSTANTS\n  Faults = {}\nINIT Init\nNEXT Next\nINVARIANT AtMostThree\nINVARIANT NotNegative\n' > "$dir/Faulty.cfg"
+fault() {
+  want=$1; shift
+  got=0; sh "$here/fault.sh" "$@" > "$dir/out" 2>&1 || got=$?
+  [ "$got" = "$want" ] || { cat "$dir/out"; echo "FAIL: expected exit $want, got $got: fault $*" >&2; exit 1; }
+}
+fault 0 "$dir/Faulty.tla" too_far AtMostThree
+grep -q '^ok: fault too_far breaks AtMostThree' "$dir/out" || { cat "$dir/out"; echo "FAIL: no verdict for a fault that breaks its rule" >&2; exit 1; }
+# The rule that is listed second is checked alone, so the first one cannot stand in for it.
+fault 1 "$dir/Faulty.tla" too_far NotNegative
+grep -q '^FAIL: NotNegative holds with fault too_far on' "$dir/out" || { cat "$dir/out"; echo "FAIL: a rule that the fault does not break is not reported" >&2; exit 1; }
+fault 1 "$dir/Faulty.tla" no_such_fault AtMostThree
+fault 2 "$dir/Faulty.tla" too_far NoSuchRule
+fault 2 "$dir/Counter.tla" too_far AtMostThree
+rm "$dir/Faulty.tla" "$dir/Faulty.cfg"
+
 # trace.sh: the model follows a log of real steps, and names the first event that it cannot take.
 cat > "$dir/CounterTrace.tla" <<'TLA'
 ---- MODULE CounterTrace ----

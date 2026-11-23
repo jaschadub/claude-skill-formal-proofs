@@ -14,6 +14,8 @@ code() { printf 'header\nlock();\n%s\nfooter %s\n' "$1" "$2" > code.rs; }
 claude() { printf '{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"%s/code.rs","old_string":"x"}}' "$dir" | sh "$here/remind.sh"; }
 # Codex: a patch with a path from the working directory, which the hook gets as "cwd".
 codex() { printf '{"hook_event_name":"PostToolUse","cwd":"%s","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\\n*** %s File: code.rs\\n@@\\n-x\\n+y\\n*** End Patch"}}' "$dir" "${1:-Update}" | (cd sub && sh "$here/remind.sh"); }
+# Cursor: its own event name, and its own shape for the answer.
+cursor() { printf '{"hook_event_name":"postToolUse","tool_name":"Write","tool_input":{"file_path":"%s/code.rs","content":"x"},"tool_output":"{}","workspace_roots":["%s"],"cursor_version":"3.31.15"}' "$dir" "$dir" | (cd / && sh "$here/remind.sh"); }
 # Pi and others: the file as an argument, plain text back.
 plain() { sh "$here/remind.sh" "$dir/code.rs"; }
 
@@ -21,12 +23,13 @@ code 'say("hi");' 1
 printf 'covered:\n  - code.rs\n    > lock(\n    > say("hi")\n' > VERIFY.md
 sh "$here/../skills/maintain-formal-verification/drift.sh" --sync > /dev/null
 code 'say("hi");' 2
-[ -z "$(claude)$(codex)$(plain)" ] || fail "reminder for an edit outside the cited lines"
+[ -z "$(claude)$(codex)$(cursor)$(plain)" ] || fail "reminder for an edit outside the cited lines"
 
 code 'say("hi"); log();' 2
 want='formal-proofs: this edit changed verified code, which no longer matches its record. VERIFY.md: code.rs: changed (lines 2-3). Before you finish, .* --sync VERIFY.md'
 claude | grep -q "^{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"$want\"}}\$" || fail "Claude Code"
 codex | grep -q "^{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"$want\"}}\$" || fail "Codex"
+cursor | grep -q "^{\"additional_context\":\"$want\"}\$" || fail "Cursor"
 plain | grep -q "^$want\$" || fail "plain text"
 plain | grep -q 'sh "[^"]*/drift.sh" --sync VERIFY.md$' || fail "the path of drift.sh is not quoted in the reminder"
 

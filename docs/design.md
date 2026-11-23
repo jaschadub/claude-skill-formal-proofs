@@ -46,7 +46,7 @@ Each `> ` line cites a line of the file by its text. The hash covers the text fr
 
 ## What keeps it checked
 
-**The hook, in the agent.** The install for Claude Code, Codex, and Pi sets it up. Codex runs it only after you trust it in `/hooks`. The Cursor plugin has no hook. After the agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
+**The hook, in the agent.** The install for Claude Code, Codex, Cursor, and Pi sets it up. Codex runs it only after you trust it in `/hooks`. After the agent edits a file, the hook runs `drift.sh`. If the edit changed covered code, the agent gets this reminder, and nothing otherwise:
 
 ```
 formal-proofs: this edit changed verified code, which no longer matches its record.
@@ -57,7 +57,7 @@ the check. Only then run, from the root of the repo: sh .../drift.sh --sync exam
 
 The hook sees only the edits that the agent makes with its edit tools. A change by a shell command, a merge, or a person gets no reminder, and the action in CI catches it.
 
-**The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. The [README](../README.md) shows the step, and this repo's own [CI](../.github/workflows/ci.yml) runs it on the example.
+**The GitHub Action, in CI.** It fails the build when covered code changed without a re-sync of its record, or when a model breaks a rule. With the `faults` input, it also fails when a deliberate fault no longer breaks its rule, so a model cannot lose the ability to fail without notice. The [README](../README.md) shows the step, and this repo's own [CI](../.github/workflows/ci.yml) runs it on the example.
 
 **A trace of a real run.** A hash says that covered lines changed. A trace says whether the code still does what the model describes: a test runs the real code, the code logs each step, and `tla-check` checks that the model can take the same steps. The action runs it with the `traces` input. [`examples/counter-rs`](../examples/counter-rs) does this for Rust code, next to a check that runs the real code under every order of its threads.
 
@@ -67,6 +67,7 @@ The hook sees only the edits that the agent makes with its edit tools. A change 
 sh path/to/skills/maintain-formal-verification/drift.sh          # exit 1 when covered code changed
 sh path/to/skills/tla-check/check.sh formal/session/Session.tla  # exit 12 when a rule breaks
 sh path/to/skills/tla-check/trace.sh formal/session/SessionTrace.tla trace.log  # exit 1 when the code left the model
+sh path/to/skills/tla-check/fault.sh formal/session/Session.tla no_lock NoSpentTokenSent  # exit 1 when the fault no longer breaks the rule
 ```
 
 ## Versions

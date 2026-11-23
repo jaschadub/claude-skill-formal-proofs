@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "matcher": "Write|Delete",
+        "command": "sh ./hooks/remind.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}
