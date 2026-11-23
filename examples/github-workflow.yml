@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # so that a failure can list the commits since the last sync
-      - uses: jaschadub/skill-formal-proofs@v0.4.0
+      - uses: jaschadub/skill-formal-proofs@v0.4.1
         with:
           specs: formal/session/Session.tla # your models, separated by spaces
           # faults: formal/session/Session.tla:no_lock=NoSpentTokenSent # each fault of the record with a rule that it must break, once for each rule
