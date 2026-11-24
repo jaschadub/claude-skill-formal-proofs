@@ -1,6 +1,6 @@
 # Changelog
 
-Each version is a git tag, such as `v0.5.1`. The GitHub Action is pinned by that tag.
+Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
 ## 0.5.2 - 2026-11-23
 
