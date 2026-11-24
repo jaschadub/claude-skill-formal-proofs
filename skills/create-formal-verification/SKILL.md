@@ -27,16 +27,16 @@ Pick the tool that answers the question at the lowest cost: a model checker, a p
 
 Prefer a tool that the repo's developers can install and run, and tell the user why you chose it.
 
-When the code is Rust, read [rust.md](rust.md) before you choose. When it is Python, read [python.md](python.md). Each says which checker answers which question, what a pass means, and where a model of code in that language goes wrong.
+When the code is Rust, read [rust.md](rust.md) before you choose. When it is Python, read [python.md](python.md). When it is PHP, read [php.md](php.md). Each says which checker answers which question, what a pass means, and where a model of code in that language goes wrong.
 
 ## What makes it good
 
-- **True to the code.** Every part of the model or proof points to code that a reviewer can open. What the verification treats as one indivisible step is one indivisible step in the code. Names come from this repo.
-- **Able to fail.** A check that you have never seen fail proves nothing. Show each property failing on a broken variant of the code it guards, such as a removed check or a reordered step. A pass is also empty when the steps that matter never happen. After a pass, look at how often each step ran, and explain each step that never ran. A rule that the code breaks needs the opposite test: show that it holds on a variant with the fix, such as a model with a `Fixes` switch next to `Faults`. A rule that fails there too is one that no code can keep.
+- **True to the code.** Every part of the model or proof points to code that a reviewer can open. What the verification treats as one indivisible step is one indivisible step in the code. A read of a value that no other process writes can be part of the step after it: say so where you do it. Names come from this repo.
+- **Able to fail.** A check that you have never seen fail proves nothing. Show each property failing on a broken variant of the code it guards, such as a removed check or a reordered step. A pass is also empty when the steps that matter never happen. After a pass, look at how often each step ran, and explain each step that never ran. A rule that the code breaks needs the opposite test: show that it holds on a variant with the fix, such as a model with a `Fixes` switch next to `Faults`. A rule that fails there too is one that no code can keep. Show that the check of such a rule can fail in the config with the fix, because only there does the rule hold.
 - **Findings stay findings.** When the current code breaks the property, report it with the counterexample in the code's terms. Do not weaken the property or the model until it passes, and do not change product code unless the user asks. Keep a rule that the code breaks in a config or a test of its own, so that the committed check still passes and the finding can be run again. When the code keeps a rule only because every caller meets a condition, check the rule with that condition, cover the callers' guard in the record, and report the function without the condition as a finding.
 - **Honest about scope.** Say what is verified, under which bounds and assumptions, and what is left out. A pass covers the model or the bound, not the whole system. Keep two lists apart: what the verification leaves out, and what it includes and shows to break. The second list is a finding about the design, also when no change to the code can fix it.
 - **Readable without the tool.** State the property and the harm in one plain sentence each. Tell a counterexample as a short sequence of steps in the code's words.
-- **Cheap to rerun.** One command, a reproducible tool version, and a run short enough that the next agent will use it on every relevant change.
+- **Cheap to rerun.** Few commands, each named in the record, a reproducible tool version, and a run short enough that the next agent will use it on every relevant change.
 - **Kept in step with the code.** Record the lines of code that each check depends on, so that a script can tell when they change. Then the next agent, a hook, and CI can all see that the verification needs another look.
 
 ## Write the record
@@ -92,7 +92,7 @@ The author of a record cannot see its gaps, so a reader who has not seen your wo
 - one that breaks the property in the real code;
 - one refactor of covered code that changes no behavior.
 
-When the checks cannot pass while the break is in place, put the refactor in a second copy.
+When the checks cannot pass while the break is in place, put the refactor in a second copy. Before you judge the record by the break, confirm on the copy that it really breaks the property, with a test or a replay: a change that looks like a break can change nothing.
 
 When you can start a fresh agent, give it the scratch copy and the path of the record, and ask it to review the uncommitted changes. Do not tell it what the changes are or what you expect. With only the record, it must report the break, with the rule and the path in the code's words, and it must pass the refactor: the checks pass, and the reader gets through the steps of the record to the sync. If it misses the break, reports the refactor as a bug, or cannot run a step, fix the record or the verification, not the scratch changes. Then test again with a new fresh agent on a new scratch copy.
 

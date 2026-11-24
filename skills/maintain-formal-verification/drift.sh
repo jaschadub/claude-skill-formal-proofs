@@ -25,7 +25,11 @@ prefix=$(git rev-parse --show-prefix 2>/dev/null) || prefix=
 # shellcheck disable=SC2046
 [ $# -gt 0 ] || set -- $(git ls-files -co --exclude-standard -- ':(glob)**/VERIFY.md')
 tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+# The report is printed only at the end, so that a reader that stops early, as `| head` does, cannot stop
+# --sync before it writes the records.
+if (exec 3>&1) 2>/dev/null; then exec 3>&1; else exec 3>/dev/null; fi
+trap 'cat "$tmp/out" >&3 2>/dev/null; rm -rf "$tmp"' EXIT
+exec >"$tmp/out"
 
 # Print the text of file $1 from the first line cited in $tmp/cited to the last, and its line numbers
 # on stderr. If a cited line is missing or out of order, print its text and fail.

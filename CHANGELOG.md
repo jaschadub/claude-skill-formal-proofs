@@ -2,6 +2,21 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## Unreleased
+
+### Added
+
+- `php.md`, a guide for PHP web apps, from a test on a real Laravel app: which check fits, what counts as one step when requests, jobs, and commands share a database, how to run several processes in one PHPUnit test and log a trace, how to race on PostgreSQL, and why `vendor/` must be copied and not linked.
+- The create skill says to confirm that the deliberate break of the record test really breaks the property, when a read can be part of the next step, and where to show that the check of a broken rule can fail.
+
+### Changed
+
+- "Cheap to rerun" asks for few commands, each named in the record, instead of one.
+
+### Fixed
+
+- `drift.sh --sync` piped into `head`, or run with its output closed, stopped before it wrote the records. It now prints its report only at the end.
+
 ## 0.5.2 - 2026-11-23
 
 ### Changed

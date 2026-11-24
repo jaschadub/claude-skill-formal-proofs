@@ -28,6 +28,10 @@ covered:
 Text after.
 MD
 expect 1 "code.rs: not synced yet (lines 2-4)"
+# A reader that stops early, as `| head` does, must not stop --sync before it writes the record.
+sh "$here/drift.sh" --sync >&- 2>/dev/null || true
+grep -q '^  - code.rs [0-9a-f]\{12\}$' VERIFY.md || fail "--sync wrote nothing when its output went nowhere"
+printf '# Record\n\ncovered:\n  - code.rs\n    > fn refresh(\n    > take_lock(\n    > save(\n\nText after.\n' > VERIFY.md
 expect 0 "code.rs: lines 2-4" --sync
 grep -q '^  - code.rs [0-9a-f]\{12\}$' VERIFY.md || fail "--sync wrote no hash"
 grep -q '^Text after\.$' VERIFY.md || fail "--sync lost text outside the block"
