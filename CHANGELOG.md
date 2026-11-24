@@ -2,6 +2,13 @@
 
 Each version is a git tag, such as `v0.5.1`. The GitHub Action is pinned by that tag.
 
+## 0.5.2 - 2026-11-23
+
+### Changed
+
+- `rust.md` says why Kani does not finish on `format!`, and gives a stub for the capacity hint that makes it finish.
+- More on Kani in `rust.md`, from a second run: which arguments of a harness to fix, how to check a returned string, the empty input, how out of memory and an unreached cover look in the output, how to get the input that breaks a rule, and that `--harness` matches by part of a name.
+
 ## 0.5.1 - 2026-11-23
 
 ### Added
