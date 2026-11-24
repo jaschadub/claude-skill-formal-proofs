@@ -2,6 +2,18 @@
 
 Each version is a git tag, such as `v0.5.0`. The GitHub Action is pinned by that tag.
 
+## 0.5.1 - 2026-11-23
+
+### Added
+
+- `rust.md` says how to use Kani on real code, from a run on two string functions: where the harness goes, the command and what a pass prints, why each harness needs an input of one exact size, how to make a symbolic string, that `format!` may not finish, and that a run out of memory looks like a broken rule.
+- The create skill says what to do when a verifier finishes only for small inputs or for part of the code, and when the code keeps a rule only because its callers meet a condition.
+
+### Changed
+
+- Fault patches are made with fixed `a/` and `b/` prefixes, so that they are the same under every git config. A fix that shows that a broken rule can hold is kept as a patch too.
+- The hand-off says that the GitHub Action runs the TLA+ checks, and that another kind of check needs a CI step of its own.
+
 ## 0.5.0 - 2026-11-23
 
 ### Added
