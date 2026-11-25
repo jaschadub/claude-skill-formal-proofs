@@ -32,7 +32,7 @@ Your coding agent turns rules like “retrying a payment must never charge a cus
 
 A hook reminds the agent when it edits verified code, and a GitHub Action catches the same in CI.
 
-For Rust, Python, and PHP code, the agent also gets a guide: which checker answers which question, and where a model of code in that language goes wrong.
+For Rust, Python, PHP, and C or C++ code, the agent also gets a guide: which checker answers which question, and where a model of code in that language goes wrong.
 
 See [how it works](docs/design.md), a [worked example](examples/counter), [the same in Rust](examples/counter-rs), and the [changelog](CHANGELOG.md).
 
@@ -87,7 +87,7 @@ Ask your agent in plain words:
 - uses: actions/checkout@v4
   with:
     fetch-depth: 0 # so that a failure can list the commits since the last sync
-- uses: jaschadub/skill-formal-proofs@v0.5.2
+- uses: jaschadub/skill-formal-proofs@v0.5.3
   with:
     specs: formal/session/Session.tla
 ```

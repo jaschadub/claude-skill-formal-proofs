@@ -1,7 +1,7 @@
 {
   "name": "formal-proofs",
   "description": "Formally verify the code where a bug costs the most, and keep that verification true to the code as it changes. Includes a Java-only TLA+ checker.",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "author": {
     "name": "Jascha Wanger",
     "url": "https://jascha.me"

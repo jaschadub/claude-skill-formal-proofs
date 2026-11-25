@@ -2,12 +2,15 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
-## Unreleased
+## 0.5.3 - 2026-11-24
 
 ### Added
 
 - `php.md`, a guide for PHP web apps, from a test on a real Laravel app: which check fits, what counts as one step when requests, jobs, and commands share a database, how to run several processes in one PHPUnit test and log a trace, how to race on PostgreSQL, and why `vendor/` must be copied and not linked.
 - The create skill says to confirm that the deliberate break of the record test really breaks the property, when a read can be part of the next step, and where to show that the check of a broken rule can fail.
+- `c-cpp.md`, a guide for C and C++, from a test on real C++ firmware: when CBMC fits and when it cannot read the code, how to make sanitizers stop a test on undefined behavior, inputs in blocks of their exact size, what AddressSanitizer cannot see, how to count what a test reached, and what to say when a test stands in for a proof.
+- The record names the plugin and its version for `drift.sh` for every kind of check, and a pointer skill stays local also when the user's or the repo's rules say not to commit agent folders.
+- The create skill says that a verifier that cannot read the code counts as one that does not finish, that coverage is the count of steps for a test, and that a hand-off which delivers a test for a proof says so first. The recipe for a fault patch moved there, and it now works for uncommitted changes.
 
 ### Changed
 
