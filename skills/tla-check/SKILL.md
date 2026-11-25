@@ -23,6 +23,7 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 - Write `Next` as a disjunction of named actions, so that each step of a counterexample carries the name of its action.
 - TLC reports a state with no step out as a deadlock, also when it is a correct end state. Add to `Next` an action that is true only in the end states and changes nothing, such as `AllDone == (\A p \in Procs : pc[p] = "done") /\ UNCHANGED vars`.
 - Keep the constants small. TLC explores every reachable state, so a model with no bound runs without end.
+- TLC's integers are 32-bit, from -2147483648 to 2147483647, and a larger number in the spec is an error. Model a wider number of the code, such as one that wraps at 2^32, with a small stand-in, and say why in the record.
 - To say that a step never has to wait, use `ENABLED`, such as `reader = "close" => ENABLED Close`. A rule about the state alone cannot tell a step that waits from one that is about to happen, so it also fails for correct code.
 
 ## Read the result
@@ -37,7 +38,7 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 
 TLC stops at the first rule that breaks. To see whether another rule holds, copy the config to a scratch folder outside the repo, keep only that rule in the copy, and pass the copy as the second argument. Use one copy for each rule. Do not pass `-continue`: on a large model it prints millions of lines and still names only the first rule.
 
-The script runs TLC with one worker for each core. With several workers, the path that TLC prints can be a little longer than the shortest one. Add `-workers 1` when you need the shortest.
+The script runs TLC with one worker for each core. With several workers, the path that TLC prints can be a little longer than the shortest one. Add `-workers 1` when you need the shortest, or `-workers N` to use fewer cores. Java gives TLC up to a quarter of the memory; to cap it, set `JAVA_TOOL_OPTIONS=-Xmx2g` or another size.
 
 In a counterexample, `State 1` lists every variable. Each later state names the action that led to it and lists only the variables that changed, except the last state, which lists every variable again.
 
@@ -118,7 +119,7 @@ Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes t
 sh <skill dir>/trace.sh TRACESPEC.tla LOG [CONFIG.cfg]
 ```
 
-`LOG` can be a folder. The script then checks every `.log` file under it, each distinct log once, and its last lines say how many logs there were, how many were distinct, and how often each step was logged. Many runs that all write the same log show one order only, so make the runs differ. A step with a low count is one that the runs rarely reach.
+`LOG` can be a folder. The script then checks every `.log` file under it, each distinct log once, and its last lines say how many logs there were, how many were distinct, and how often each step was logged. Many runs that all write the same log show one order only, so make the runs differ. A step with a low count is one that the runs rarely reach. It runs one TLC for each core at a time; set `TLA_JOBS` to run fewer.
 
 | Exit code | Meaning |
 |-----------|---------|

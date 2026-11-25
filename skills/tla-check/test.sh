@@ -116,6 +116,14 @@ printf '%s\n%s\n%s\n%s\n' "$up" "$up" "$up" "$up" > "$dir/logs/run2/d.log"
 trace 1 "$dir/logs"
 has 'run2/d.log, and cannot take event 4' "the log that the model cannot follow is not named"
 has '^FAIL: 1 of 3 distinct logs under ' "the failed logs are not counted"
+# TLA_JOBS limits how many TLCs run at a time; one at a time gives the same verdict.
+export TLA_JOBS=1
+trace 1 "$dir/logs"
+has '^FAIL: 1 of 3 distinct logs under ' "TLA_JOBS=1 changes the verdict"
+TLA_JOBS=many
+trace 2 "$dir/logs"
+has 'TLA_JOBS must be a positive number' "a bad TLA_JOBS is not named"
+unset TLA_JOBS
 trace 2 "$dir/empty"
 : > "$dir/log"
 trace 2 "$dir/log"

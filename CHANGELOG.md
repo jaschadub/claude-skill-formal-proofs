@@ -2,6 +2,19 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## 0.5.4 - 2026-11-25
+
+### Added
+
+- `go.md`, a guide for Go, from a test on a real network router: a test that tries every order of the calls that it can stop at, paired with a model for the steps inside them, what `-race` and fuzzing cover, reading what a library call really does, test runs that print `ok` without checking anything, fault patches for a whole module, coverage of statement blocks, and a module that a check assumes.
+- `trace.sh` takes `TLA_JOBS` to run fewer TLCs at a time on a folder of logs.
+- `tla-check` says that TLC's integers are 32-bit, and how to give TLC fewer cores and less memory.
+
+### Changed
+
+- The text that a record cites for a line must be unique in its file, so that a changed line is reported as itself.
+- The create skill says to keep a fix for a check of the real code as a patch, with the break of the rule made on top of it. Before, only `rust.md` said so.
+
 ## 0.5.3 - 2026-11-24
 
 ### Added

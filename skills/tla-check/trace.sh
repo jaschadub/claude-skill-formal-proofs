@@ -29,8 +29,9 @@ if [ -d "$log" ]; then
   while IFS= read -r file; do
     printf '%s\t%s\n' "$(grep '[^[:space:]]' "$file" | sum | cut -d' ' -f1)" "$file"
   done < "$tmp/all" | awk -F '\t' '!seen[$1]++ { print $2 }' > "$tmp/distinct"
-  # One TLC for each distinct log, as many at a time as there are cores.
-  jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null) || jobs=2
+  # One TLC for each distinct log, as many at a time as there are cores, or TLA_JOBS.
+  jobs=${TLA_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)}
+  case $jobs in '' | *[!0-9]* | 0) echo "trace.sh: TLA_JOBS must be a positive number" >&2; exit 2 ;; esac
   n=0
   while IFS= read -r file; do
     n=$((n + 1))
