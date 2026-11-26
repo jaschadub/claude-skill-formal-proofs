@@ -2,6 +2,17 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## 0.5.5 - 2026-11-25
+
+### Added
+
+- The create skill checks how far the checkout is behind the project, and asks whether to verify the checkout or the latest code.
+- Before a finding is reported, the create skill replays it on the latest code and release, looks for other code that keeps the same rule, gives it a test of its own, keeps a security bug on the project's private route, and asks the user what to do with each report instead of sending it.
+
+### Changed
+
+- Cited text needs to be unique only among the later lines of its file. A step whose line repeats further down is covered by the hash of its stretch, with a line next to it cited.
+
 ## 0.5.4 - 2026-11-25
 
 ### Added

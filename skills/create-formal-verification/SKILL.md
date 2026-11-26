@@ -13,6 +13,8 @@ A test checks the cases that someone thought to write. Formal verification check
 
 Answer from the codebase, and ask the user only what you cannot observe. If the user named an area or a bug, start there.
 
+First find out how current the checkout is. Fetch its remote, and for a fork also the project that it was forked from (`gh repo view --json parent`), and count the commits on their default branch that the checkout does not have. When it is behind, tell the user how far, and ask whether to verify the checkout or the latest code. Work on old code can find bugs that are already fixed.
+
 A good target is a promise the code makes, where a break harms users and tests rarely reach the case that breaks it. Choose the strongest such target in the repo, not the one that is easiest to verify.
 
 Before you build anything, check the target against the tests. Find the test that comes closest to the promise, and name what it asserts and the case that it does not reach, such as "the bank accepted the charge, but the confirmation timed out". When no test comes close, say that. When you cannot name a case that the tests miss, the tests may already cover the promise: say so, and choose another target unless the user named this one.
@@ -56,7 +58,7 @@ covered:
     > fs::rename(
 ```
 
-Write one entry for each covered stretch of code, with its path from the repo root. A file with two stretches far apart gets two entries. Each `> ` line cites one line of the file by a piece of its text. The first cited line is where the stretch starts, the last is where it ends, and the lines between are the steps that the verification depends on, in the order they appear in the file. Cite the text, not the line number, so that the record survives edits elsewhere in the file. The script takes the first line that contains the text after the previous cited line, so choose text that no other line of the file has. When a cited line changes, the script would otherwise take the same text further down, and report the wrong line as missing. An entry with no cited lines covers the whole file.
+Write one entry for each covered stretch of code, with its path from the repo root. A file with two stretches far apart gets two entries. Each `> ` line cites one line of the file by a piece of its text. The first cited line is where the stretch starts, the last is where it ends, and the lines between are the steps that the verification depends on, in the order they appear in the file. Cite the text, not the line number, so that the record survives edits elsewhere in the file. The script takes the first line that contains the text after the previous cited line, so choose text that no later line of the file has. When a cited line changes, the script would otherwise take the same text further down, and report the wrong line as missing. When a step's line repeats further down, such as one call that two functions make, cite a line next to it instead: the hash of the stretch still covers the step. An entry with no cited lines covers the whole file.
 
 Cover the code that the verification assumes, not only the code that it follows step by step. When a step relies on a helper to be exclusive or atomic, such as the function that takes the lock or the one that replaces a file, give that helper its own entry. Keep line numbers out of the comments in the model too, and name the function there.
 
@@ -100,12 +102,21 @@ When you cannot start a fresh agent, follow the record yourself on both changes,
 
 Last, delete the scratch copy, and confirm that the check in the repo is where it started: passing, or failing only on the findings you will report. A record that no one has followed is a draft.
 
+## Check each finding before you report it
+
+- **Replay it on the latest code.** In a scratch clone, get the newest default branch and the newest release of each release line that the project still ships, and replay each finding on them. Drop a finding that no longer breaks, and say that it is fixed there. When the newer code rewrote what you covered, port the finding's small test (below), not the whole verification, and say so. For each version, say whether a test showed the bug, or only a reading of the code.
+- **Look for other code that keeps the same rule.** Before you call a broken rule a bug or say how bad it is, search for every other place that enforces it, such as a second listener, a periodic scan, or a check on the server. Confirm that such code runs in the case that breaks: a scan can look up the wrong key and find nothing. Say which cases still break, and rate the finding by those.
+- **Give each finding a test of its own.** Write the smallest test that shows the bug on the real code, without the model or the harness, so that a maintainer can run it on their own branch. It fails now and passes after a fix. Name the versions where you ran it.
+- **Keep a security bug private.** When a finding lets someone get around a security rule, such as access that stays after it was revoked, read the project's security policy, often `SECURITY.md`, with every document that it points to, and follow its private route, such as an advisory form or an email address. A repo that holds the policy can take private advisories of its own: check it with `gh api repos/OWNER/REPO/private-vulnerability-reporting`. Never put such a finding in a public issue, pull request, or commit message. In a public repo, the record and the configs of the finding disclose it too: ask the user before they are committed or pushed. When the user asks for a public route, say first what the policy asks for. When two documents of the project name different routes, say so.
+- **Ask before you send.** Write each report as a file outside the repo, and ask the user what to do with it. Do not open an issue or a pull request, send an email, or file an advisory, unless the user asked for that in this task or in standing instructions.
+
 ## Hand off
 
 Tell the user:
 
 - what you verified, the case that the tests do not reach, which tool you used and why, and the bounds. When the user asked for a formal verification and you deliver a test, say so first, and say what a proof would take;
-- what the check found, in plain words;
+- what the check found, in plain words, and on which versions it still breaks;
+- where each report is, with the question what to do with it;
 - each rule in one plain sentence, with the question whether that is what the system must always do. You chose the rules from the code, and only the user can say that they are the right ones. A rule that the user rejects is a wrong specification, however well it is checked;
 - the known weaknesses of the design, apart from what the check leaves out;
 - how to run the check;
