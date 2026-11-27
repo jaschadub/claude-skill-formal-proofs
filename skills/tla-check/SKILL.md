@@ -113,19 +113,19 @@ TraceUnfinished == traceAt < Len(TraceLog)
 ====
 ```
 
-Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes the first from the log and reads the other two. Its config has `INIT TraceInit`, `NEXT TraceNext`, the constants, and the rules of the model as INVARIANT. Leave `TraceUnfinished` out of the config, because the script adds it. Give a constant that the log names as strings, such as `Threads = {"t1", "t2"}`. For a step that the code cannot log, such as a lost reply, add `\/ LoseReply /\ UNCHANGED traceAt` to `TraceNext`. The run must fit that config: the same ids, and no more work than the model allows, such as one hit for each thread. Start each run with an empty log.
+Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes the first from the log and reads the other two. Its config has `INIT TraceInit`, `NEXT TraceNext`, the constants, and the rules of the model as INVARIANT. Leave `TraceUnfinished` out of the config, because the script adds it. Give a constant that the log names as strings, such as `Threads = {"t1", "t2"}`. For a step that the code cannot log, such as a lost reply, add `\/ LoseReply /\ UNCHANGED traceAt` to `TraceNext`. Keep such steps few, and log every step that the code can log: TLC tries an unlogged step at every point, also where the run did not take it, so a rule can break on a path that the run never took. Before you count such a break, replay its path against the code. The run must fit that config: the same ids, and no more work than the model allows, such as one hit for each thread. Start each run with an empty log.
 
 ```sh
 sh <skill dir>/trace.sh TRACESPEC.tla LOG [CONFIG.cfg]
 ```
 
-`LOG` can be a folder. The script then checks every `.log` file under it, each distinct log once, and its last lines say how many logs there were, how many were distinct, and how often each step was logged. Many runs that all write the same log show one order only, so make the runs differ. A step with a low count is one that the runs rarely reach. It runs one TLC for each core at a time; set `TLA_JOBS` to run fewer.
+`LOG` can be a folder. The script then checks every `.log` file under it, each distinct log once, and its last lines say how many logs there were, how many were distinct, and how often each step was logged. Many runs that all write the same log show one order only, so make the runs differ. A step with a low count is one that the runs rarely reach. It runs up to four TLCs at a time, each a JVM with a heap of its own; set `TLA_JOBS` to run more or fewer.
 
 | Exit code | Meaning |
 |-----------|---------|
 | 0 | The model follows the whole log. |
 | 1 | The model cannot take an event. The output gives that event and a state of the model before it. Either the code changed and the model must follow, or the code has a bug. |
-| 12 | A rule of the model breaks in the run that the log describes. The output is TLC's, with the path. |
+| 12 | A rule of the model breaks on a path that follows the log so far. The output is TLC's, with the path. When the log has every step, that path is the run. With a step that the code cannot log, it can be a path that the rest of the log rules out. |
 | 2 | The check did not run: a file is missing, the log is empty, the config lists `TraceUnfinished`, a `TraceLog.tla` sits next to the trace spec, or `TraceInit` allows no first state. The output says which. |
 
 Show that the trace check can fail: delete one line from a log, or log a run of the code with a deliberate break, and see exit 1. An `Event` that allows too much follows every log. When the first run already fails, replay the event against the code before you change the trace spec: the code can be what is wrong.

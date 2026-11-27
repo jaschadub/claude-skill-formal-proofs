@@ -2,6 +2,21 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## 0.5.7 - 2026-11-26
+
+### Added
+
+- `python.md` says how to hold a thread between two plain statements with `sys.settrace`, and that free runs on CPython 3.12 to 3.14 did not switch there, so a test of such a bug must force the switch.
+
+### Changed
+
+- `trace.sh` runs up to four TLCs at a time on a folder of logs. Before, it ran one for each core, which used up the memory of a machine with 24 cores. `TLA_JOBS` sets another count.
+
+### Fixed
+
+- `tla-check` said that exit 12 of a trace check means that a rule breaks in the logged run. With a step that the code cannot log, the rule can break on a path that the run never took. It now says so, and says to log every step that the code can log.
+- The maintain skill says which commit `drift.sh` takes as the last sync, and why its list can hold commits that were read already.
+
 ## 0.5.6 - 2026-11-26
 
 ### Added
