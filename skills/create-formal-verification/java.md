@@ -57,6 +57,8 @@ A step of the model must be one indivisible step of the code. Check each of thes
   - Lincheck rolls back state that the block writes, also a counter of the test. Count with a printed line, and count it in the output of the build, not in the report files.
   - Add `-XX:+EnableDynamicAgentLoading` to the test JVM. Lincheck leaves `lincheck-bootstrap*.jar` files in the temp folder.
   - Start with two threads and one call each. The model covers more threads.
+  - A break makes Lincheck throw `LincheckAssertionError`, with the whole path in its message. A test of the record that must pass while the bug is there expects that error.
+  - Lincheck also switches inside classes of the JDK: its path showed steps inside `CompletableFuture`.
 - **A path with no race can be the finding.** One finding here needed three overlapping calls and no switch between two instructions. Say for each finding whether it needs a race, and how wide the window is: "the whole of a method" or "two statements".
 
 ## Tie the model to the code with a trace
@@ -97,7 +99,7 @@ A step of the model must be one indivisible step of the code. Check each of thes
 - Say what one step is, with the reason for each joined step.
 - Give the reading of the memory model: each shared field, and why a write to it is seen at once.
 - A cited text must not repeat further down, and Java repeats. Use an entry for each method, start it at the signature, and cite the parameter types of an overload.
-- Cite the helper classes that the model assumes. For an assumption about a library, cite the line of its version in `pom.xml` or `build.gradle`.
+- Cite the helper classes that the model assumes. For an assumption about a library, cite the line of its version in `pom.xml` or `build.gradle`. For the JDK, cite the lines of the compiler's `source` and `target`, and name the JDK that ran.
 - A fix that needs a design change stays a switch of the model. Say that it is not a patch for the code. A trace test that throws on a call that it does not log refuses code with a fix patch: say so, or teach it the new call.
 - A test that passes while the bug is there can report the finding as gone under an unrelated fault. When it does, replay the finding before you believe it.
 - Name the harness file that must follow a change to the covered code.

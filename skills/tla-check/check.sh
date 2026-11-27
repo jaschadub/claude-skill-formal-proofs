@@ -34,6 +34,8 @@ exists "$cfg"
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+# A signal alone would skip the EXIT trap and leave TLC's states in the temp folder.
+trap 'exit 143' HUP INT TERM
 cd "$(dirname "$spec")"
 # -difftrace: each step of a counterexample shows only the variables that changed.
 "$java" -XX:+UseParallelGC "-Djava.io.tmpdir=$work" -cp "$jar" tlc2.TLC -config "$cfg" -metadir "$work" \

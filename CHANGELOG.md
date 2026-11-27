@@ -2,6 +2,17 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## 0.5.11 - 2026-11-27
+
+### Added
+
+- `processes.md` after a second test, on a real job queue library with a real Redis: what one step is in Redis, who offers a message again, a child process that outlives a kill of its parent, a restarted process as a new one, a write of a whole object, time limits that the broker or a client keeps, a harness for code that forks or blocks in the broker, calls that the model has no step for, and more rules for code that retries.
+- Smaller lessons that earlier test runs listed: a time limit for a TLC run that grows too large, one event of the code that is several steps of the model, the cost of a folder of logs, a guard on the other side of `\/`, one patch for one change, what a check adds to the default test run, which findings share a report, and points for `python.md`, `typescript.md`, and `java.md`.
+
+### Fixed
+
+- `check.sh` removes its temp folder when a signal stops it, such as from `timeout`. Before, TLC's states stayed there.
+
 ## 0.5.10 - 2026-11-27
 
 ### Added

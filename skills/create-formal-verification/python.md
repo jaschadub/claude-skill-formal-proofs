@@ -29,6 +29,12 @@ A step of the model must be one indivisible step of the code. Check each of thes
 - **A free run rarely switches between two plain statements.** On CPython 3.12, 3.13, and 3.14 with the GIL, about 70,000 free tries each never put a thread between a read and the write after it. So the test that shows such a bug must force the switch, as above. Say in the finding that the path needs a switch between two lines, on which versions free runs did not show it, and whether a free-threaded build was tried.
 - **Under a test, `sys.exit` only raises `SystemExit`.** The process lives on, and a daemon thread keeps running and keeps logging. End each log at the step that stands for the exit, and write one log for each scenario.
 
+## Run it
+
+- A harness that imports the product code writes `__pycache__` folders into the repo. Set `PYTHONDONTWRITEBYTECODE=1` for it.
+- A test file outside the repo, such as the test of a report, does not run by its path with `python3 -m unittest`. Run it from its own folder, with `PYTHONPATH` set to the repo.
+- `from api import QUEUE` gives the importing module a name of its own. A test that sets `api.QUEUE` must set the copy in each such module too.
+
 ## The record
 
 When the model trusts a step of the standard library, such as `threading.Lock` or `queue.Queue`, `drift.sh` cannot hash it. Write that assumption in the record, with the Python version that you ran.
