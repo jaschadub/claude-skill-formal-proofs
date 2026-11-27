@@ -13,9 +13,9 @@ Read this when the code to verify is TypeScript or JavaScript that runs on Node.
 | Timers, time-outs, expiry | Fake timers of the test runner on the real code | Only the cases that the test makes. |
 | Several processes, workers, a shared store | A TLA+ model only | The model. |
 
-No tool was found that runs real TypeScript under every order of its async steps, as loom does for Rust. Say so first when the user asked for a formal verification, and deliver the test with the model. The test is cheap to write here, because a stretch of code with no `await` runs whole. In the test run, a harness of about 370 lines made 2,500 runs in 7 seconds at depth 9, and found each broken rule with the shortest path to it. Depth 14 took 72 seconds, and depth 30 did not end. TLC covered the same system with no depth: 213,003 states in 3 seconds. So keep both.
+No tool was found that runs real TypeScript under every order of its async steps, as loom does for Rust. Say so first when the user asked for a formal verification, and deliver the test with the model. The test is cheap to write here, because a stretch of code with no `await` runs whole. In the test run, a harness of about 370 lines made 2,500 runs in 7 seconds at depth 9, and found each broken rule with the shortest path to it. Depth 14 took 72 seconds, and depth 30 did not end. A search whose choices have the budgets of the model, such as two calls and one clear, ends by itself with no state cut off: in a second test run, 93,736 runs in 11 seconds. TLC covered the same system with no depth: 213,003 states in 3 seconds. So keep both.
 
-`fc.scheduler()` needs no change to the code: wrap each awaited dependency with `s.schedule(...)`, start the calls, and `await s.waitAll()`. It caught a seeded break at once. It picks orders at random and does not fire timers, so a pass is evidence and not a proof. A check that the record keeps cannot use a package that the repo lacks: install such a tool outside the repo for a first look, and build the kept test on the repo's own runner.
+`fc.scheduler()` needs no change to the code. When the package is outside the repo, import it by the absolute path that `require.resolve` gives, from a test file inside the runner's root. In use: wrap each awaited dependency with `s.schedule(...)`, start the calls, and `await s.waitAll()`. It caught a seeded break at once. It picks orders at random and does not fire timers, so a pass is evidence and not a proof. A check that the record keeps cannot use a package that the repo lacks: install such a tool outside the repo for a first look, and build the kept test on the repo's own runner.
 
 ## Where a model of async code goes wrong
 
@@ -29,7 +29,8 @@ A step of the model must be one indivisible step of the code. Check each of thes
 - **TLC's shortest path can be one that promise order forbids, while a sibling path is real.** Two waits of one turn each end in the order in which they started. When a path does not show on the code, try the other start order before you call the model wrong.
 - **A token or id made from the clock is part of the state.** A token signed with a time in whole seconds and no random part is the same string twice in one second. A model with "a fresh token each time" passed where the code revoked the token that it then held. Read how each id, token, and key is made before you model it as fresh.
 - **A promise that nobody awaits** is a call that the caller cannot order, and its failure reaches nobody, as in `setTimeout(() => { this.refresh(); }, ms)`. Model its failure as a step, and ask what the code does after it.
-- **Check the edges of a timer's delay.** A computed delay of zero or less can mean that no timer is set. A delay of more than 2^31-1 ms, about 24.8 days, makes Node use 1 ms: the test run saw 165 refreshes in 200 ms. The fake timers of vitest copy that rule.
+- **`Promise.race([work, timeout])` stops nothing.** The loser runs on, and can still write. A timer that the code does not clear stays, and keeps Node from its exit: 100 calls that ended left 100 timers. Count them with `vi.getTimerCount()` under fake timers, and with `process.getActiveResourcesInfo()` under real ones.
+- **Check the edges of a timer's delay.** A computed delay of zero or less can mean that no timer is set. A delay of more than 2^31-1 ms, about 24.8 days, makes Node use 1 ms: the test run saw 165 refreshes in 200 ms. Show it with real timers: the fake timers of vitest did not fire the same way in every case.
 - **A timer that fires implies that time passed,** so the model's timer step moves its clock too. `clearTimeout` on a timer that fired does nothing, and the field that holds its id is not cleared when it fires.
 - **A shared promise,** such as `this.refreshing ??= this.doRefresh()`, makes overlapping calls safe only when the check and the store are in one stretch, and the field is cleared in `finally`. If not, one failure goes to every later caller.
 - **Each process and each worker has a heap and an event loop of its own.** A list in memory, such as a list of revoked tokens, is one for each process.
@@ -48,7 +49,7 @@ A step of the model must be one indivisible step of the code. Check each of thes
 
   If you hold before you call the real method, a write that the code makes inside its caller's stretch moves to a later step, and the test checks other code than the product.
 - **After each step, let every promise callback run,** with a real `setImmediate`: `await new Promise(r => setImmediate(r))`. Then one choice of the search is one stretch of one call.
-- **Fake only the timers that you need:** `vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })`. The default also fakes `setImmediate`, and the wait above never ends. `vi.advanceTimersToNextTimer()` fires one timer and moves the clock to it. `vi.setSystemTime(...)` moves the clock and fires nothing.
+- **Fake only the timers that you need:** `vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })`. The default also fakes `setImmediate`, and the wait above never ends. `vi.advanceTimersToNextTimer()` moves the clock to the next timer and fires every timer that is due at that time, with no promise callback between them. Two calls that start in one stretch have such timers, so the model needs one step for them together, or the test must give them different delays. `vi.setSystemTime(...)` moves the clock and fires nothing. Read the state of a path before you switch back to real timers: after `vi.useRealTimers()`, `Date.now()` is the real clock.
 - **Search breadth first:** make fresh objects for each path, replay the path, skip a state that was seen before, and check the rules at each new state. The first break is then the shortest path. Print the count of runs, of distinct states, and of states cut off at the depth.
 - **The key that says "seen before" must hold everything that decides which code runs next.** In the test run, two kinds of login had the same key, so the search never ran the second half of one, and passed. Line coverage showed it. Run the search once with coverage, and explain each line of the covered functions that never ran.
 - **Make the harness fail on what the model has no step for:** a call that still waits after its one release, and a call that ended with no `await` where the model has one.
@@ -65,12 +66,13 @@ A step of the model must be one indivisible step of the code. Check each of thes
 ## Run it
 
 - Run one file from the folder that holds the runner's config: `npx vitest run PATH`. The root config can differ from a package's own `test` script, which can be stale.
-- **A test file anywhere in the repo joins the default run,** when the config includes `**/*.test.ts`. Gate the slow parts and the findings with environment variables and `describe.skipIf`.
+- **A test file anywhere in the repo joins the default run,** when the config includes `**/*.test.ts`. Give the search a small depth by default and the full depth by an environment variable. Do not skip it: a search that is skipped checks nothing.
 - **Test runs that can lie:**
   - `-t` with a name that matches nothing exits 0, with every test skipped. So say in the record what a pass prints, with the counts.
   - An unhandled rejection fails the run while every test passes, and vitest names the last test that ran. Read the `Errors` line.
   - vitest cuts long values in a failure message. Put the rule and its path in the message argument of `expect`.
-- vitest does not check types. Run `npx tsc --noEmit` on the test file too.
+- vitest does not check types. `tsc` with a file argument ignores `tsconfig.json`, so give the harness folder a `tsconfig.json` that extends the root one with `noEmit`, and run `npx tsc -p` on it.
+- The text report of coverage cuts long lists of lines. Use `--coverage.reporter=json` with `--coverage.include` for the covered files.
 
 ## Scratch copies and patches
 

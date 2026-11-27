@@ -2,7 +2,7 @@
 
 <!-- Copyright (c) 2026 Jascha Wanger (jascha.me). MIT license; see LICENSE. -->
 
-Read this when the code to verify is Python. It adds to `SKILL.md` and replaces none of it. It covers code that uses threads. It does not cover asyncio or code that runs in several processes.
+Read this when the code to verify is Python. It adds to `SKILL.md` and replaces none of it. It covers code that uses threads. It does not cover asyncio. For code that runs in several processes, also read [processes.md](processes.md).
 
 ## Pick the checker
 

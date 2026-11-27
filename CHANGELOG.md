@@ -2,6 +2,16 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## 0.5.10 - 2026-11-27
+
+### Added
+
+- `processes.md`, a guide for promises that span several processes, from a test on an order service with a queue of files and worker processes: what one step is, messages, a time limit with no clock, a crash as a step that loses only the memory of the process, and a harness that runs real processes one step at a time and kills them at a chosen step.
+- `trace.sh` takes a log line with a negative number. Before, it ended with a syntax error.
+- Corrections to `typescript.md` and `java.md` from a second test of each on other code: timers that are due at the same time, `Promise.race`, a search that ends by itself, `CompletableFuture`, and a callback that runs under a lock.
+- The maintain skill has an outcome for a change that fixes a finding which the record lists, and says what then happens to the rule, the finding's configs and test, the patches, the record, and a report that went out. Before, every outcome was for a check that stayed the same or got worse.
+- Lessons that the test runs for the TypeScript and Java guides reported about the skills themselves: what to do when the remote cannot be reached, a table in the record for each run, a fix that would be a redesign, a check that a fault patch applied, how to size a model, `SYMMETRY`, a log of a step that holds no lock, a path through large states, and that a finding has two tests with opposite results.
+
 ## 0.5.9 - 2026-11-26
 
 ### Added

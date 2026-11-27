@@ -65,7 +65,7 @@ fi
 { cat "$cfg"; echo; echo "INVARIANT TraceUnfinished"; } > "$tmp/trace.cfg"
 grep '[^[:space:]]' "$log" > "$tmp/events" || { echo "trace.sh: $log has no events, so it shows nothing" >&2; exit 2; }
 events=$(grep -c . "$tmp/events")
-{ echo "---- MODULE TraceLog ----"; echo "TraceLog == <<"; sed '$!s/$/,/' "$tmp/events"; echo ">>"; echo "===="; } > "$tmp/TraceLog.tla"
+{ echo "---- MODULE TraceLog ----"; echo "EXTENDS Integers"; echo "TraceLog == <<"; sed '$!s/$/,/' "$tmp/events"; echo ">>"; echo "===="; } > "$tmp/TraceLog.tla"
 
 # TLC stops at the first state that breaks TraceUnfinished, which is a state at the end of the log.
 status=0

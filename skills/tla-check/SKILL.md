@@ -22,7 +22,8 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 - Write each rule that the reader agrees to as an INVARIANT. If the model has no variable for a rule, add the variable. Never weaken a rule to make it hold. A rule that something eventually happens, such as "every job ends", is not about one state: write it as a PROPERTY, as described below.
 - Write `Next` as a disjunction of named actions, so that each step of a counterexample carries the name of its action.
 - TLC reports a state with no step out as a deadlock, also when it is a correct end state. Add to `Next` an action that is true only in the end states and changes nothing, such as `AllDone == (\A p \in Procs : pc[p] = "done") /\ UNCHANGED vars`.
-- Keep the constants small. TLC explores every reachable state, so a model with no bound runs without end.
+- Keep the constants small. TLC explores every reachable state, so a model with no bound runs without end. Grow them in steps. One budget of calls for all threads grows more slowly than a budget for each thread.
+- `SYMMETRY` over a set of threads that are all alike can cut the states of an invariant check by a large factor. It needs model values, such as `Threads = {t1, t2, t3}`, and a `Permutations` definition. A trace config then needs the same set as strings, so it is a config of its own.
 - TLC's integers are 32-bit, from -2147483648 to 2147483647, and a larger number in the spec is an error. Model a wider number of the code, such as one that wraps at 2^32, with a small stand-in, and say why in the record.
 - To say that a step never has to wait, use `ENABLED`, such as `reader = "close" => ENABLED Close`. A rule about the state alone cannot tell a step that waits from one that is about to happen, so it also fails for correct code.
 
@@ -34,13 +35,13 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 | 12 | An invariant breaks. The output names it and gives the shortest path. |
 | 11 | Deadlock: a reachable state has no step out. |
 | 13 | A temporal PROPERTY breaks. The output does not name it; see "Check that something eventually happens". |
-| other | The spec or config has an error. Read the output from the top: the cause is often a few lines above the first `Error:` line. An exception of TLC after it generated states can come from the machine, such as memory or temp space: keep the output, and rerun once before you change the spec. |
+| other | The spec or config has an error. Read the output from the top: the cause is often a few lines above the first `Error:` line. An exception of TLC after it generated states, or `Disk quota exceeded`, comes from the machine: TLC keeps its queue of states in the temp folder, and that reaches gigabytes at a few million states. Keep the output, give it a `TMPDIR` on a disk or smaller constants, and rerun before you change the spec. |
 
 TLC stops at the first rule that breaks. To see whether another rule holds, copy the config to a scratch folder outside the repo, keep only that rule in the copy, and pass the copy as the second argument. Use one copy for each rule. Do not pass `-continue`: on a large model it prints millions of lines and still names only the first rule.
 
 The script runs TLC with one worker for each core. With several workers, the path that TLC prints can be a little longer than the shortest one. Add `-workers 1` when you need the shortest, or `-workers N` to use fewer cores. Java gives TLC up to a quarter of the memory; to cap it, set `JAVA_TOOL_OPTIONS=-Xmx2g` or another size.
 
-In a counterexample, `State 1` lists every variable. Each later state names the action that led to it and lists only the variables that changed, except the last state, which lists every variable again.
+In a counterexample, `State 1` lists every variable. Each later state names the action that led to it and lists only the variables that changed, except the last state, which lists every variable again. For a model with large states, read the path first: `grep -E '^Error: Inv|^State [0-9]+: <'` gives the rule and the action of each step.
 
 A pass covers the model within its constants. It says nothing about code that the model does not describe.
 
@@ -96,7 +97,7 @@ Spec == Init /\ [][Next]_vars /\ Fairness
 - **When the code breaks the rule,** keep the rule as promised in a config of its own. The committed config can hold a second rule that names the cases that break, such as `Submitted(j) ~> (Ended(j) \/ Abandoned(j))`. Say in the record that this is what the code keeps and not what it promises, and list each named case as a known weakness.
 - **A step that can come at any time and stops everything,** such as the exit of the process, breaks every such rule at once and hides the other breaks. Put it behind a constant, and check it in a config of its own.
 - **A state where the run only waits needs a step too.** Workers that wait on an empty queue have no step out, and TLC reports that as a deadlock, exit 11, before it looks at the rule. Give each such state an action that changes nothing, as for the end states. Then a run that stops there shows as a break of the rule.
-- **Limits.** TLC can miss a break of such a rule when the config has `SYMMETRY`, so leave it out. The check is much slower than for invariants: a model of 2,656 states took a second, and one of 238,086 states over two minutes. A trace check cannot show such a rule, because a log ends. Leave such a rule out of the config of a trace check.
+- **Limits.** TLC can miss a break of such a rule when the config has `SYMMETRY`, so leave it out. The check is much slower than for invariants: a model of 2,656 states took a second, and one of 238,086 states over two minutes. A trace check cannot show such a rule, because a log ends: make the test that writes the logs fail when a run does not settle. Leave such a rule out of the config of a trace check.
 
 ## Check that the model follows the real code
 
@@ -112,7 +113,7 @@ When you may not change the product code, log from the test: wrap or replace the
 
 Log what the code does, at every place where it does it: a line at each place that takes the lock, not one line for each call. Then a change that takes the lock twice shows in every run. A log that is written to match the model hides that change in almost every run.
 
-Write the line while the step still holds what makes it one indivisible step, such as the lock. If not, two threads can log in another order than they ran. Do not move a lock or hold it for longer to make room for the line, because that changes the code that you check. Log the values that the rules are about too, such as the count, and compare them in `Event`.
+Write the line while the step still holds what makes it one indivisible step, such as the lock. If not, two threads can log in another order than they ran. Do not move a lock or hold it for longer to make room for the line, because that changes the code that you check. Log the values that the rules are about too, such as the count, and compare them in `Event`. A step that holds nothing, such as one atomic read, has no such moment. Then have the test run one thread at a time, with a stop at each step: the order of the lines is the order of the steps. A thread must not wait for a lock between two stops, or two threads run at once.
 
 Next to the model, write a trace spec that takes one event of the log at a time:
 
@@ -139,7 +140,7 @@ Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes t
 sh <skill dir>/trace.sh TRACESPEC.tla LOG [CONFIG.cfg]
 ```
 
-`LOG` can be a folder. The script then checks every `.log` file under it, each distinct log once, and its last lines say how many logs there were, how many were distinct, and how often each step was logged. Many runs that all write the same log show one order only, so make the runs differ. A step with a low count is one that the runs rarely reach. It runs up to four TLCs at a time, each a JVM with a heap of its own; set `TLA_JOBS` to run more or fewer.
+`LOG` can be a folder. The script then checks every `.log` file under it, each distinct log once, and its last lines say how many logs there were, how many were distinct, and how often each step was logged. Many runs that all write the same log show one order only, so make the runs differ. A step with a low count is one that the runs rarely reach. It runs up to four TLCs at a time, each a JVM with a heap of its own; set `TLA_JOBS` to run more or fewer. The script reads subfolders too, so runs that need another config, such as other limits, go to a folder of their own that is not inside the first.
 
 | Exit code | Meaning |
 |-----------|---------|
