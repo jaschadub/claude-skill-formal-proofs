@@ -19,7 +19,7 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 
 ## Write the spec
 
-- Write each rule that the reader agrees to as an INVARIANT. If the model has no variable for a rule, add the variable. Never weaken a rule to make it hold.
+- Write each rule that the reader agrees to as an INVARIANT. If the model has no variable for a rule, add the variable. Never weaken a rule to make it hold. A rule that something eventually happens, such as "every job ends", is not about one state: write it as a PROPERTY, as described below.
 - Write `Next` as a disjunction of named actions, so that each step of a counterexample carries the name of its action.
 - TLC reports a state with no step out as a deadlock, also when it is a correct end state. Add to `Next` an action that is true only in the end states and changes nothing, such as `AllDone == (\A p \in Procs : pc[p] = "done") /\ UNCHANGED vars`.
 - Keep the constants small. TLC explores every reachable state, so a model with no bound runs without end.
@@ -30,10 +30,10 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 
 | Exit code | Meaning |
 |-----------|---------|
-| 0 | Every rule holds in every reachable state. The last lines of the output give the count of distinct states. |
+| 0 | Every rule holds in every reachable state, and each rule that something eventually happens holds in every run that the fairness allows. The last lines of the output give the count of distinct states. |
 | 12 | An invariant breaks. The output names it and gives the shortest path. |
 | 11 | Deadlock: a reachable state has no step out. |
-| 13 | A temporal PROPERTY breaks. |
+| 13 | A temporal PROPERTY breaks. The output does not name it; see "Check that something eventually happens". |
 | other | The spec or config has an error. Read the output from the top: the cause is often a few lines above the first `Error:` line. |
 
 TLC stops at the first rule that breaks. To see whether another rule holds, copy the config to a scratch folder outside the repo, keep only that rule in the copy, and pass the copy as the second argument. Use one copy for each rule. Do not pass `-continue`: on a large model it prints millions of lines and still names only the first rule.
@@ -77,6 +77,26 @@ The script checks a copy of the config with `Faults = {"FAULT"}` and with RULE a
 | 0 | The fault breaks the rule. |
 | 1 | The rule holds with the fault on. The model can no longer fail there, so fix the model before you trust a pass. |
 | 2 | The config has no `Faults = {}`, or it does not list the rule. |
+
+## Check that something eventually happens
+
+An invariant says that no state is bad. It cannot say that a job ends, a lock gets free, or a request gets a reply: a run that stops halfway breaks no invariant. Write such a rule with `~>` (leads to), and list it under `PROPERTY` in the config:
+
+```tla
+EveryJobEnds == \A j \in Jobs : Submitted(j) ~> Ended(j)
+Fairness == \A w \in Workers : WF_vars(WorkerStep(w))
+Spec == Init /\ [][Next]_vars /\ Fairness
+```
+
+- **The config needs `SPECIFICATION Spec`** in place of `INIT` and `NEXT`. With `INIT` and `NEXT` the model has no fairness, a run may stop at any point, and every such rule breaks at once.
+- **Fairness is an assumption about what keeps running.** `WF_vars(A)` says that step `A` is taken at some point when it stays possible. Give it to the steps that the code takes without help: a thread that gets scheduled, a call that returns or raises. Give none to a step of the outside, such as a user who submits or a process that crashes. When a step can end in several ways, put the fairness on all the ways together, as in `WorkerStep(w)`, so that it does not force the good one. `SF_vars(A)` assumes more: `A` is taken when it is possible again and again, as with a fair lock. Use it only where the code gives that. Write each fairness assumption into the record in plain words, such as "every thread keeps getting scheduled, and every call of a job returns or raises".
+- **A rule that the result stays** is a rule about steps: `EndedStays == [][\A j \in Jobs : Ended(j) => state'[j] = state[j]]_vars`. It goes under `PROPERTY` too, and a break of it gives exit 12.
+- **Exit 13 does not name the rule,** and its path is not the shortest. It prints `Error: Temporal properties were violated.` To learn which rule broke, check each one in a config copy of its own. A path that ends in `Stuttering` is a run that stops there for good with the rule unmet. One that ends in `Back to state N` goes around that loop without end.
+- **Show that it can fail.** `fault.sh` takes such a rule as it takes an invariant. A fault that drops a retry makes the run stop, and a fault that drops a counter makes it loop. For a rule that only the config with a fix lists, pass that config as the fourth argument.
+- **When the code breaks the rule,** keep the rule as promised in a config of its own. The committed config can hold a second rule that names the cases that break, such as `Submitted(j) ~> (Ended(j) \/ Abandoned(j))`. Say in the record that this is what the code keeps and not what it promises, and list each named case as a known weakness.
+- **A step that can come at any time and stops everything,** such as the exit of the process, breaks every such rule at once and hides the other breaks. Put it behind a constant, and check it in a config of its own.
+- **A state where the run only waits needs a step too.** Workers that wait on an empty queue have no step out, and TLC reports that as a deadlock, exit 11, before it looks at the rule. Give each such state an action that changes nothing, as for the end states. Then a run that stops there shows as a break of the rule.
+- **Limits.** TLC can miss a break of such a rule when the config has `SYMMETRY`, so leave it out. The check is much slower than for invariants: a model of 2,656 states took a second, and one of 238,086 states over two minutes. A trace check cannot show such a rule, because a log ends. Leave such a rule out of the config of a trace check.
 
 ## Check that the model follows the real code
 

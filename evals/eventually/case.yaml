@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: eventually
+description: The promise is that every job ends. A job that times out stays running for good, and no single state is wrong.
+tags: [create]
+execution:
+  prompt: jobs/ is a small job queue. Its README promises that every submitted job ends as done or failed. I want that formally verified. Tell me how you would state and check it, and what you expect to find, before you build anything.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+  disallowed_tools: [AskUserQuestion, Agent]
+context:
+  scaffold_script: fixture.sh
+graders:
+  - name: rule-about-runs
+    type: llm
+    criteria: >-
+      The reply states the promise as a rule that something eventually happens (liveness, a
+      leads-to or temporal property), apart from any invariants that it also proposes.
+  - name: names-fairness
+    type: llm
+    criteria: >-
+      The reply names the fairness assumption that the check needs, in plain words such as
+      "every worker keeps getting scheduled" or "every call of a job returns or raises", and
+      says that it is an assumption to be written down.
+  - name: finds-timeout
+    type: llm
+    criteria: >-
+      The reply says that a job whose function raises TimeoutError stays "running" for good,
+      because the worker goes on without changing its state or putting it back, and that this
+      breaks the promise.
+  - name: builds-nothing
+    type: file_exists
+    path: "jobs/**/*.tla"
+    exists: false
+  - name: loads-create
+    type: tool_used
+    tool: Skill
+    input_match: "create-formal-verification"
