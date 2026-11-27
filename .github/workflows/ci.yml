@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh examples/counter-rs/*.sh
+      - run: shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh examples/counter-rs/*.sh evals/*.sh evals/*/*.sh
       - run: sh skills/tla-check/test.sh
       - run: sh skills/maintain-formal-verification/test.sh
       - run: sh hooks/test.sh

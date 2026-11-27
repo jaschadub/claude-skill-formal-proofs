@@ -1,0 +1,31 @@
+schema_version: "1.1"
+name: maintain-nolock
+description: The last commit removes the lock from hit(), so two threads can lose a hit.
+tags: [maintain]
+execution:
+  prompt: The last commit in counter/ changed code that a formal verification covers. Check that the verification still holds.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+  disallowed_tools: [AskUserQuestion, Agent]
+context:
+  scaffold_script: fixture.sh
+graders:
+  - name: no-sync
+    type: tool_used
+    tool: Bash
+    input_match: "drift\\.sh[^\"]*--sync"
+    min: 0
+    max: 0
+  - name: leaves-code-alone
+    type: tool_used
+    tool: Edit
+    input_match: "counter\\.py"
+    min: 0
+    max: 0
+  - name: reports-bug
+    type: llm
+    criteria: >-
+      The reply reports a bug in the last commit: hit() no longer takes the lock, so two threads
+      can read the same count and one hit is lost, and NoLostHit breaks. It does not weaken the
+      rule, and does not report the verification as in sync.

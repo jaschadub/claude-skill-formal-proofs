@@ -1,6 +1,6 @@
 ---
 name: create-formal-verification
-description: "Use when code needs more assurance than tests can give and no formal check covers it yet: races, retries, lock ordering, state machines, parsers, or unsafe code where a bug is costly. Also for requests such as \"model-check this race\", \"prove this invariant\", or \"formally verify this\"."
+description: "Use when code needs more assurance than tests can give and no formal check covers it yet: races, retries, lock ordering, state machines, parsers, or unsafe code where a bug is costly. Also for requests such as \"model-check this race\", \"prove this invariant\", \"formally verify this\", or \"what else should we verify\"."
 ---
 
 # Create a formal verification
@@ -13,7 +13,16 @@ A test checks the cases that someone thought to write. Formal verification check
 
 Answer from the codebase, and ask the user only what you cannot observe. If the user named an area or a bug, start there.
 
-First find out how current the checkout is. Fetch its remote, and for a fork also the project that it was forked from (`gh repo view --json parent`), and count the commits on their default branch that the checkout does not have. When it is behind, tell the user how far, and ask whether to verify the checkout or the latest code. Work on old code can find bugs that are already fixed.
+First find out how current the checkout is. When it has a remote, fetch it, and for a fork also the project that it was forked from (`gh repo view --json parent`), and count the commits on their default branch that the checkout does not have. When it is behind, tell the user how far, and ask whether to verify the checkout or the latest code. Work on old code can find bugs that are already fixed.
+
+Then read each `VERIFY.md` in the repo. A rule that a record covers already is not a target. A new path to the state that a model covers, such as a second caller of the same lock or another writer of the same field, goes into that model as new steps, and its code into that record: two models of one state drift apart, and neither shows how the paths interleave. A target on other state gets a record of its own, in a folder of its own.
+
+When you add a path to a model:
+
+- Check each old step against the new path. What was one step can be two, once another path can come between its parts.
+- When the new path changes on purpose what an old rule promises, as a reset does to a count, restate the rule, and write down the old wording, the new wording, and the evidence.
+- Rerun every check and every fault of the record, and give the new steps a fault of their own. When a new step is itself the break, its fault goes on top of the fix.
+- Treat a rule that the new path breaks as any other finding of this skill: keep it in a config of its own, and sync the record. The record's rule that a change with a bug is not synced is for a change that has not landed.
 
 A good target is a promise the code makes, where a break harms users and tests rarely reach the case that breaks it. Choose the strongest such target in the repo, not the one that is easiest to verify.
 
@@ -34,7 +43,7 @@ When the code is Rust, read [rust.md](rust.md) before you choose. When it is Pyt
 ## What makes it good
 
 - **True to the code.** Every part of the model or proof points to code that a reviewer can open. What the verification treats as one indivisible step is one indivisible step in the code. A read of a value that no other process writes can be part of the step after it: say so where you do it. Names come from this repo.
-- **Able to fail.** A check that you have never seen fail proves nothing. Show each property failing on a broken variant of the code it guards, such as a removed check or a reordered step. A pass is also empty when the steps that matter never happen. After a pass, look at how often each step ran, and explain each step that never ran. For a test, that is the coverage of lines and branches of the covered code. A rule that the code breaks needs the opposite test: show that it holds on a variant with the fix, such as a model with a `Fixes` switch next to `Faults`. A rule that fails there too is one that no code can keep. Show that the check of such a rule can fail in the config with the fix, because only there does the rule hold.
+- **Able to fail.** A check that you have never seen fail proves nothing. Show each property failing on a broken variant of the code it guards, such as a removed check or a reordered step. A pass is also empty when the steps that matter never happen. After a pass, look at how often each step ran, and explain each step that never ran. For a test, that is the coverage of lines and branches of the covered code. A rule that the code breaks needs the opposite test: show that it holds on a variant with the fix, such as a model with a `Fixes` switch next to `Faults`. A rule that fails there too is one that no code can keep. Show that the check of a rule that the code breaks can fail in the config with the fix, because only there does the rule hold.
 - **Findings stay findings.** When the current code breaks the property, report it with the counterexample in the code's terms. Do not weaken the property or the model until it passes, and do not change product code unless the user asks. Keep a rule that the code breaks in a config or a test of its own, so that the committed check still passes and the finding can be run again. When the code keeps a rule only because every caller meets a condition, check the rule with that condition, cover the callers' guard in the record, and report the function without the condition as a finding.
 - **Honest about scope.** Say what is verified, under which bounds and assumptions, and what is left out. A pass covers the model or the bound, not the whole system. Keep two lists apart: what the verification leaves out, and what it includes and shows to break. The second list is a finding about the design, also when no change to the code can fix it.
 - **Readable without the tool.** State the property and the harm in one plain sentence each. Tell a counterexample as a short sequence of steps in the code's words.
@@ -96,7 +105,7 @@ The author of a record cannot see its gaps, so a reader who has not seen your wo
 
 When the checks cannot pass while the break is in place, put the refactor in a second copy. Before you judge the record by the break, confirm on the copy that it really breaks the property, with a test or a replay: a change that looks like a break can change nothing.
 
-When you can start a fresh agent, give it the scratch copy and the path of the record, and ask it to review the uncommitted changes. Do not tell it what the changes are or what you expect. With only the record, it must report the break, with the rule and the path in the code's words, and it must pass the refactor: the checks pass, and the reader gets through the steps of the record to the sync. If it misses the break, reports the refactor as a bug, or cannot run a step, fix the record or the verification, not the scratch changes. Then test again with a new fresh agent on a new scratch copy.
+When you can start a fresh agent, give it the scratch copy and the path of the record, and ask it to review the uncommitted changes. Do not tell it what the changes are or what you expect. With only the record, it must report the break, with the rule and the path in the code's words, and it must pass the refactor: the checks pass, each finding can still be replayed, and the reader gets through the steps of the record to the sync. If it misses the break, reports the refactor as a bug, or cannot run a step, fix the record or the verification, not the scratch changes. Then test again with a new fresh agent on a new scratch copy.
 
 When you cannot start a fresh agent, follow the record yourself on both changes, and say in the hand-off that no cold reader tested it.
 
@@ -104,11 +113,7 @@ Last, delete the scratch copy, and confirm that the check in the repo is where i
 
 ## Check each finding before you report it
 
-- **Replay it on the latest code.** In a scratch clone, get the newest default branch and the newest release of each release line that the project still ships, and replay each finding on them. Drop a finding that no longer breaks, and say that it is fixed there. When the newer code rewrote what you covered, port the finding's small test (below), not the whole verification, and say so. For each version, say whether a test showed the bug, or only a reading of the code.
-- **Look for other code that keeps the same rule.** Before you call a broken rule a bug or say how bad it is, search for every other place that enforces it, such as a second listener, a periodic scan, or a check on the server. Confirm that such code runs in the case that breaks: a scan can look up the wrong key and find nothing. Say which cases still break, and rate the finding by those.
-- **Give each finding a test of its own.** Write the smallest test that shows the bug on the real code, without the model or the harness, so that a maintainer can run it on their own branch. It fails now and passes after a fix. Name the versions where you ran it.
-- **Keep a security bug private.** When a finding lets someone get around a security rule, such as access that stays after it was revoked, read the project's security policy, often `SECURITY.md`, with every document that it points to, and follow its private route, such as an advisory form or an email address. A repo that holds the policy can take private advisories of its own: check it with `gh api repos/OWNER/REPO/private-vulnerability-reporting`. Never put such a finding in a public issue, pull request, or commit message. In a public repo, the record and the configs of the finding disclose it too: ask the user before they are committed or pushed. When the user asks for a public route, say first what the policy asks for. When two documents of the project name different routes, say so.
-- **Ask before you send.** Write each report as a file outside the repo, and ask the user what to do with it. Do not open an issue or a pull request, send an email, or file an advisory, unless the user asked for that in this task or in standing instructions.
+Before you hand off a finding, follow the [`report-finding`](../report-finding/SKILL.md) skill. It replays the finding on the latest code, looks for other code that keeps the rule, gives the finding a test of its own, keeps a security bug private, and asks the user before anything is sent.
 
 ## Hand off
 
@@ -122,4 +127,4 @@ Tell the user:
 - how to run the check;
 - who tested the record: a fresh agent, or only you.
 
-Say that `drift.sh` reports a change to the covered code, and that the `formal-proofs` plugin carries a hook that reminds an agent after such an edit and a GitHub Action that runs `drift.sh` and the TLA+ checks in CI. Offer to add the action to the repo's CI. A check that is not a TLA+ model, such as a Kani or a loom run, needs a CI step of its own: say so, and offer to add that too. Suggest a second target only if you found a close one. Point the user at `maintain-formal-verification` for bringing the verification back in line after changes that did not recheck it.
+Say that `drift.sh` reports a change to the covered code, and that the `formal-proofs` plugin carries a hook that reminds an agent after such an edit and a GitHub Action that runs `drift.sh` and the TLA+ checks in CI. Offer to add the action to the repo's CI. A check that is not a TLA+ model, such as a Kani or a loom run, needs a CI step of its own: say so, and offer to add that too. So does a config other than the one next to its spec, such as the one with a fix or with a finding: the action runs each spec only with the config next to it. List the other targets that you considered, strongest first, each with its promise, the harm of a break, and the record that covers it already or "not covered". Point the user at `maintain-formal-verification` for bringing the verification back in line after changes that did not recheck it.

@@ -1,0 +1,36 @@
+schema_version: "1.1"
+name: find-more
+description: The repo has one record, for hit(). reset() is a new path to the same count, and quota.py is a race on other state.
+tags: [create]
+execution:
+  prompt: counter/ already has one formal verification. Find what else in it we should verify, and tell me before you build anything.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+  disallowed_tools: [AskUserQuestion, Agent]
+context:
+  scaffold_script: fixture.sh
+graders:
+  - name: reads-record
+    type: tool_used
+    tool: Read
+    input_match: "VERIFY\\.md"
+  - name: skips-covered-rule
+    type: llm
+    criteria: >-
+      The reply does not propose the race in hit(), or the rule NoLostHit, as a new target. It
+      says that the existing record covers it.
+  - name: extends-model-for-reset
+    type: llm
+    criteria: >-
+      The reply says that reset() writes the count without the lock, and proposes adding reset()
+      to the existing Counter model and its record, not a separate new model of the count.
+  - name: ranked-list
+    type: llm
+    criteria: >-
+      The reply lists more than one candidate target in an order of priority, including the
+      check-then-take race in quota.py, and says for each whether a record covers it already.
+  - name: loads-create
+    type: tool_used
+    tool: Skill
+    input_match: "create-formal-verification"

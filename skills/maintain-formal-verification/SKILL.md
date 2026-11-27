@@ -55,6 +55,8 @@ Tell the user, for each check:
 - what the verification still does not cover, including new code that it should cover and does not;
 - apart from that, each known weakness of the design: a case that the verification includes and shows to break.
 
+Before a bug goes to the project's maintainers, follow the [`report-finding`](../report-finding/SKILL.md) skill.
+
 Say outright which failures were drift in the verification and which were bugs in the code. For a check that passed before you updated it and fails after, say that the old pass was on a stale description.
 
 Put the verification updates in a change of their own, separate from any product fix.

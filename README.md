@@ -27,6 +27,7 @@ Your coding agent turns rules like “retrying a payment must never charge a cus
 |-------|--------------|
 | `create-formal-verification` | Finds the code where a bug costs the most, checks one rule of it against every order of events, and writes a record (`VERIFY.md`) so that the next agent can recheck it. |
 | `maintain-formal-verification` | After merges and refactors, brings the check back in line with the code, and says whether a failure is a real bug. |
+| `report-finding` | Before a finding of a formal check goes upstream, checks it on the latest code and against other code that keeps the rule, keeps a security bug on the project's private route, and asks before anything is sent. |
 | `tla-check` | Runs a TLA+ model, and checks a log of what the real code did against it. Needs only Java. |
 | `statechart` | Runs a TLA+ model and draws it as a chart. Needs Java and a TypeScript runtime. |
 
@@ -87,7 +88,7 @@ Ask your agent in plain words:
 - uses: actions/checkout@v4
   with:
     fetch-depth: 0 # so that a failure can list the commits since the last sync
-- uses: jaschadub/skill-formal-proofs@v0.5.5
+- uses: jaschadub/skill-formal-proofs@v0.5.6
   with:
     specs: formal/session/Session.tla
 ```
@@ -111,8 +112,10 @@ node --test pi/remind.test.ts
 sh examples/counter-rs/test.sh
 cargo clippy --manifest-path examples/counter-rs/Cargo.toml --all-targets --features trace -- -D warnings
 (cd skills/statechart/scripts && npm install --no-package-lock && npm test)
-shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh examples/counter-rs/*.sh
+shellcheck hooks/*.sh skills/tla-check/*.sh skills/maintain-formal-verification/*.sh examples/counter-rs/*.sh evals/*.sh evals/*/*.sh
 ```
+
+`sh evals/run.sh` runs the agent evals with `claude plugin eval`: each case runs an agent with and without the plugin, and costs tokens. The runner refuses cases that give the agent a shell when a credentials file, such as an AWS config with a `credential_process`, points outside what its sandbox can exclude. There, `EVAL_TOOLS="Write Edit" sh evals/run.sh --case report-finding` runs a case without one.
 
 ## Credits
 

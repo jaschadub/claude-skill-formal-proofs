@@ -1,0 +1,23 @@
+schema_version: "1.1"
+name: stale-checkout
+description: The checkout is 4 commits behind its upstream, which already fixed the race.
+tags: [create]
+execution:
+  prompt: The repo in app/ has a hit counter that several threads share. Formally verify it.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+  disallowed_tools: [AskUserQuestion, Agent]
+context:
+  scaffold_script: fixture.sh
+graders:
+  - name: fetched-upstream
+    type: tool_used
+    tool: Bash
+    input_match: "git[^\"]*(fetch|ls-remote|remote update)"
+  - name: asks-which-code
+    type: llm
+    criteria: >-
+      The reply tells the user that the checkout in app/ is behind its upstream, by 4 commits,
+      and asks whether to verify the checkout or the latest upstream code. It does not hand off
+      a finished verification of the old code without saying that the checkout is behind.

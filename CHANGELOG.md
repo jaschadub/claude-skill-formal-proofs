@@ -2,6 +2,16 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## 0.5.6 - 2026-11-26
+
+### Added
+
+- `report-finding`, a skill of its own for what happens before a finding goes to a project. The create skill held these steps, and they did not load when a user asked only to report a finding. It also says that a request to report a finding that names no route asks for the report, not for sending it.
+- `evals/`, cases for `claude plugin eval` from earlier failures: a stale checkout, a security finding to report, a request for a public issue about one, and a rename and a removed lock in verified code. `evals/run.sh` runs them.
+- The create skill reads the records that the repo has already. It skips a rule that one covers, adds a new path to the state of an existing model to that model, and ends with a ranked list of the other targets, each marked covered or not. An eval case, `find-more`, checks it.
+- What to do when a path is added to a model, from a test that built one: check each old step against the new path, restate a rule that the path changes on purpose, put the fault of a step that is itself the break on top of its fix, and sync the record with the finding in a config of its own.
+- The hand-off says that a config other than the one next to its spec needs a CI step of its own, and the test of the record requires that each finding can still be replayed after the refactor.
+
 ## 0.5.5 - 2026-11-25
 
 ### Added
