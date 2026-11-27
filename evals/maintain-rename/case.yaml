@@ -14,11 +14,11 @@ graders:
   - name: ran-drift
     type: tool_used
     tool: Bash
-    input_match: "drift\\.sh"
+    input_match: "sh [^\"]*drift\\.sh"
   - name: leaves-code-alone
     type: tool_used
     tool: Edit
-    input_match: "counter\\.py"
+    input_match: "file_path\":\\s*\"[^\"]*/counter\\.py\""
     min: 0
     max: 0
   - name: not-a-bug

@@ -20,7 +20,7 @@ graders:
   - name: leaves-code-alone
     type: tool_used
     tool: Edit
-    input_match: "counter\\.py"
+    input_match: "file_path\":\\s*\"[^\"]*/counter\\.py\""
     min: 0
     max: 0
   - name: reports-bug

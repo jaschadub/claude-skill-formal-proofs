@@ -86,7 +86,7 @@ The record also holds:
 
 The steps for a change serve an author, and a reviewer of a change that has not landed yet. A change that landed without a recheck goes to `maintain-formal-verification`, so say that in the record. The steps are: update the verification from the code, run the check, replay a failure against the code to tell a bug from a modeling error, confirm that the check can still fail, and only then sync. The record also says these three things:
 
-- A change that alters nothing that the verification describes, such as a rename, needs only a read against the verification and then a sync.
+- A change that alters nothing that the verification describes, such as a rename, needs a read against the verification, the new text for each line that the record cites and the change reworded, and then a sync. The sync refuses while a cited line is missing.
 - When a change adds a step, a rule that names steps must name the new step too. That does not weaken the rule, as long as its plain sentence stays true.
 - When a change has a bug, the updated verification stays with that change, as a patch or on its branch, and no one syncs it.
 

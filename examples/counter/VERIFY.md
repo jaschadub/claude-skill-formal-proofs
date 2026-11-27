@@ -44,7 +44,7 @@ A pass on a model that no one updated says nothing about a change to the code. U
 
 These steps are for your own change, and for a change that you review before it lands. For a change that landed without them, follow the `maintain-formal-verification` skill.
 
-1. If the change alters nothing that the model describes, such as a rename, confirm that by reading it against the table above, and go to step 6.
+1. If the change alters nothing that the model describes, such as a rename, confirm that by reading it against the table above, give each line that the table or the `covered:` block cites its new text, and go to step 6.
 2. Change the model so that it describes the new code, step for step. Write this from the code before you run anything. Update the cited lines above when a step moved or changed. When you add a step, a rule that names steps must name the new step too. That does not weaken the rule, as long as its sentence in the table stays true.
 3. Run the check.
 4. If a rule breaks, replay the path against `counter.py`, one step for each action. If a step cannot happen in the code, fix the model. If every step can happen, it is a bug in the change: report it, do not weaken the rule, and do not sync. Keep the updated model with the change, as a patch or on its branch.

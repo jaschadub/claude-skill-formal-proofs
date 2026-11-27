@@ -2,6 +2,15 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
+## 0.5.8 - 2026-11-26
+
+### Fixed
+
+- The steps for a rename in a record sent the reader straight to the sync, which refuses while a cited line has its old text. The create skill and both example records now say to give each cited line its new text first.
+- The maintain skill commits its update only when the agent's instructions let it commit. In a test, an agent that was asked only to check made a branch and a commit.
+- The maintain skill said that `drift.sh` names each cited line that is missing. It names the first one of a stretch.
+- The eval grader `leaves-code-alone` also matched an edit of any file whose name ends in `counter.py`. It now matches the path of the file, and `ran-drift` no longer counts a read of the script as a run. The fixture of the two maintain cases takes out what the example's record says about files that the fixture repo does not have.
+
 ## 0.5.7 - 2026-11-26
 
 ### Added

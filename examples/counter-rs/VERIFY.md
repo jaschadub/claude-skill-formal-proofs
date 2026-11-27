@@ -46,7 +46,7 @@ The model itself has its own record, `examples/counter/VERIFY.md`. Check 1 runs 
 
 These steps are for your own change, and for a change that you review before it lands. For a change that landed without them, follow the `maintain-formal-verification` skill.
 
-1. If the change alters nothing in the table above, such as a rename, confirm that by reading it, run both checks, and go to step 5.
+1. If the change alters nothing in the table above, such as a rename, confirm that by reading it, give each line that the table or the `covered:` block cites its new text, run both checks, and go to step 5.
 2. Run check 2 first. If the model cannot take an event, the code left the model at that event. Decide which one is right. Update the model and `CounterTrace.tla` from the code when the change is intended, and follow the model's own record.
 3. Run check 1. If `no_lost_hit` fails, some order of the two threads loses a hit. loom prints the assertion that failed and not the order, so find the order in the code: look for a place where the lock is free between the read and the write. That is a bug in the change: report it, do not weaken the test, and do not sync.
 4. Run the fault below and see that both checks fail.

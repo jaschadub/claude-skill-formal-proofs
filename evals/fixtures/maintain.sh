@@ -7,6 +7,9 @@ g() { git -c user.name=dev -c user.email=dev@example.org "$@"; }
 # The agent's shell has no network: fetch TLC into the run's home now, as tla-check would.
 sh "$root/skills/tla-check/check.sh" "$root/examples/counter/Counter.tla" >/dev/null
 mkdir -p counter/examples && cp -R "$root/examples/counter" counter/examples/ && cd counter
+# The example's record names this plugin's CI and its Rust twin, and its trace spec has no test that
+# writes a log. None of that is in this repo, so take it out: the record must be true of its repo.
+rm examples/counter/CounterTrace.* && sed -i '/^This folder is a worked example/,/writes such a log/d' examples/counter/VERIFY.md
 git init -q -b main && g add . && g commit -qm "Hit counter with its verification"
 f=examples/counter/counter.py
 case $1 in
