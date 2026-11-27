@@ -1,16 +1,17 @@
 #!/bin/sh
 # Copyright (c) 2026 Jascha Wanger (jascha.me). MIT license; see LICENSE.
 # Show that a check can still fail: switch on one deliberate fault of a model, and require that it breaks a rule.
-# usage: sh fault.sh SPEC.tla FAULT RULE [CONFIG.cfg]
+# usage: sh fault.sh SPEC.tla FAULT RULE [CONFIG.cfg] [extra TLC options]
 # The config holds `Faults = {}`. This script checks a copy of it with `Faults = {"FAULT"}` and with RULE as
 # its only rule, because TLC stops at the first rule that breaks. For a fault that must break two rules, run
 # it once for each.
 # Exit code: 0 the fault breaks the rule, 1 the rule holds with the fault on, 2 the config has no empty Faults
 # or does not list RULE, other values are TLC's.
 set -eu
-[ $# -ge 3 ] || { echo "usage: sh fault.sh SPEC.tla FAULT RULE [CONFIG.cfg]" >&2; exit 2; }
+[ $# -ge 3 ] || { echo "usage: sh fault.sh SPEC.tla FAULT RULE [CONFIG.cfg] [extra TLC options]" >&2; exit 2; }
 here=$(cd "$(dirname "$0")" && pwd)
-spec=$1; fault=$2; rule=$3; cfg=${4:-${spec%.tla}.cfg}
+spec=$1; fault=$2; rule=$3; shift 3
+case ${1:--} in -*) cfg=${spec%.tla}.cfg ;; *) cfg=$1; shift ;; esac
 [ -f "$cfg" ] || { echo "fault.sh: no such file: $cfg" >&2; exit 2; }
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -31,7 +32,7 @@ awk -v rule="$rule" '
 ' "$tmp/on.cfg" > "$tmp/fault.cfg" || { echo "fault.sh: $cfg does not list the rule $rule" >&2; exit 2; }
 
 status=0
-sh "$here/check.sh" "$spec" "$tmp/fault.cfg" > "$tmp/out" 2>&1 || status=$?
+sh "$here/check.sh" "$spec" "$tmp/fault.cfg" "$@" > "$tmp/out" 2>&1 || status=$?
 # 12 is a broken invariant or action property, which TLC names. 13 is a broken liveness property, which it does not.
 if { [ "$status" = 12 ] && grep '^Error: ' "$tmp/out" | grep -qF " $rule is violated"; } || [ "$status" = 13 ]; then
   echo "ok: fault $fault breaks $rule"

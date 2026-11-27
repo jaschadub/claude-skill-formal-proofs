@@ -32,13 +32,13 @@ Before you build anything, check the target against the tests. Find the test tha
 
 Pick the tool that answers the question at the lowest cost: a model checker, a proof assistant, an SMT-backed verifier, or another tool. Prefer a tool that runs on the real code over one that runs on a description of it, because a description can drift from the code and the real code cannot.
 
-- **Can events happen in a bad order?** First look for a checker that runs the real code under every order of steps, such as loom for Rust, Coyote for .NET, or Java PathFinder. Some of these try random orders and not every order: say which yours does. Trust a checker that you have not used before only after it catches a fault that you seed. Such a checker sees one process. When the order involves other processes, the disk, or the network, or when no such checker fits the language, use a model checker over a small model of the design. TLA+ is the default for that in any language.
+- **Can events happen in a bad order?** First look for a checker that runs the real code under every order of steps, such as loom for Rust, Coyote for .NET, or Lincheck for Java. Some of these try random orders and not every order: say which yours does. Trust a checker that you have not used before only after it catches a fault that you seed. Such a checker sees one process. When the order involves other processes, the disk, or the network, or when no such checker fits the language, use a model checker over a small model of the design. TLA+ is the default for that in any language.
 - **Does the code behave for every input,** as with memory safety, overflow, or a data-structure invariant? Use a verifier that runs on the code. If no verifier runs on this language, or none can read this code or finish on it, say so, and test the real code with generated inputs, not a hand model of the function. When a verifier finishes only for small inputs or for part of the code, keep it for that part, test the rest with generated inputs, and say which claim rests on the proof and which on the test.
 - **Must the property hold at every size,** where a bound is not enough? That needs a proof, and a prover wants contracts written into the product code, or works on a restated copy of it. Do not start there. First run the bounded check on the real code, and say plainly that it is not a proof for every size. Give the reason why larger sizes behave the same as an argument that a reviewer can read. Put it in the record, and say there that no tool checked it. Offer the proof as a next step that needs the user's consent.
 
 Prefer a tool that the repo's developers can install and run, and tell the user why you chose it.
 
-When the code is Rust, read [rust.md](rust.md) before you choose. When it is Python, read [python.md](python.md). When it is PHP, read [php.md](php.md). When it is C or C++, read [c-cpp.md](c-cpp.md). When it is Go, read [go.md](go.md). Each says which checker answers which question, what a pass means, and where a model of code in that language goes wrong.
+When the code is Rust, read [rust.md](rust.md) before you choose. When it is Python, read [python.md](python.md). When it is PHP, read [php.md](php.md). When it is C or C++, read [c-cpp.md](c-cpp.md). When it is Go, read [go.md](go.md). When it is TypeScript or JavaScript on Node, read [typescript.md](typescript.md). When it is Java, read [java.md](java.md). Each says which checker answers which question, what a pass means, and where a model of code in that language goes wrong. For a language with no guide, read the guide of the nearest language for its shape, and find out by trial what one indivisible step is before you model.
 
 ## What makes it good
 
@@ -99,9 +99,9 @@ Then write a project-local skill that only points at the record. Put it where yo
 
 ## Prove it before you hand off
 
-The author of a record cannot see its gaps, so a reader who has not seen your work must test it. Make a scratch copy of the repo outside the repo. It must hold your record and verification, also when they are not committed yet, so a new worktree or clone alone is not enough. Leave out what git ignores, such as build output: it is large, and a stale build can run in place of a change. Put two uncommitted changes in the copy:
+The author of a record cannot see its gaps, so a reader who has not seen your work must test it. Make a scratch copy of the repo outside the repo. It must hold your record and verification, also when they are not committed yet, so a new worktree or clone alone is not enough. Leave out what git ignores, such as build output: it is large, and a stale build can run in place of a change. Link or install the dependencies that the tests need. Such a folder can hold links back into the repo, so confirm that the copy runs its own files: seed one break in the copy and see the check fail. Put two uncommitted changes in the copy:
 
-- one that breaks the property in the real code;
+- one that breaks the property in the real code, and that is not one of the faults that the record lists;
 - one refactor of covered code that changes no behavior.
 
 When the checks cannot pass while the break is in place, put the refactor in a second copy. Before you judge the record by the break, confirm on the copy that it really breaks the property, with a test or a replay: a change that looks like a break can change nothing.

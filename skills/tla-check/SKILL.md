@@ -34,7 +34,7 @@ TLC needs the file name of a spec to match its module name. To check a changed c
 | 12 | An invariant breaks. The output names it and gives the shortest path. |
 | 11 | Deadlock: a reachable state has no step out. |
 | 13 | A temporal PROPERTY breaks. The output does not name it; see "Check that something eventually happens". |
-| other | The spec or config has an error. Read the output from the top: the cause is often a few lines above the first `Error:` line. |
+| other | The spec or config has an error. Read the output from the top: the cause is often a few lines above the first `Error:` line. An exception of TLC after it generated states can come from the machine, such as memory or temp space: keep the output, and rerun once before you change the spec. |
 
 TLC stops at the first rule that breaks. To see whether another rule holds, copy the config to a scratch folder outside the repo, keep only that rule in the copy, and pass the copy as the second argument. Use one copy for each rule. Do not pass `-continue`: on a large model it prints millions of lines and still names only the first rule.
 
@@ -60,14 +60,14 @@ The exit code of that command is the one from `grep`, not from TLC, so use it on
 <AllDone line 38, col 1 to line 38, col 7 of module Counter>: 0:6
 ```
 
-An action with `0:0` never ran, so no rule was tested against it. An action under `\E` over an empty set is missing from the list, so compare the list with `Next`. Read each `Warning:` line of the first run too: TLC warns when an action changes a variable that it also lists as UNCHANGED, and that action never runs. Either explain it, such as a fault switch that is off in this config, or fix the model. An action that changes nothing, such as `AllDone`, finds no new state but still shows how often it ran.
+An action with `0:0` never ran, so no rule was tested against it. An action under `\E` over an empty set is missing from the list, so compare the list with `Next`. Read each `Warning:` line of the first run too: TLC warns when an action changes a variable that it also lists as UNCHANGED, and that action never runs. Either explain it, such as a fault switch that is off in this config, or fix the model. An action that changes nothing, such as `AllDone`, finds no new state but still shows how often it ran. So does an action that leads only to states that another action found first. An action under `\E` over a set that is a variable can show under the name of `Next`.
 
 ## Check that a fault still breaks its rule
 
 A pass counts only if the check can fail. A model shows that with a switch for each deliberate fault: a `Faults` constant that is `{}` in the config. Switch one fault on, and require that one rule breaks:
 
 ```sh
-sh <skill dir>/fault.sh SPEC.tla FAULT RULE [CONFIG.cfg]
+sh <skill dir>/fault.sh SPEC.tla FAULT RULE [CONFIG.cfg] [extra TLC options]
 ```
 
 The script checks a copy of the config with `Faults = {"FAULT"}` and with RULE as its only rule. For a fault that must break two rules, run it once for each.
@@ -133,7 +133,7 @@ TraceUnfinished == traceAt < Len(TraceLog)
 ====
 ```
 
-Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes the first from the log and reads the other two. Its config has `INIT TraceInit`, `NEXT TraceNext`, the constants, and the rules of the model as INVARIANT. Leave `TraceUnfinished` out of the config, because the script adds it. Give a constant that the log names as strings, such as `Threads = {"t1", "t2"}`. For a step that the code cannot log, such as a lost reply, add `\/ LoseReply /\ UNCHANGED traceAt` to `TraceNext`. Keep such steps few, and log every step that the code can log: TLC tries an unlogged step at every point, also where the run did not take it, so a rule can break on a path that the run never took. Before you count such a break, replay its path against the code. The run must fit that config: the same ids, and no more work than the model allows, such as one hit for each thread. Start each run with an empty log.
+Keep the names `TraceLog`, `traceAt`, and `TraceUnfinished`: the script writes the first from the log and reads the other two. Its config has `INIT TraceInit`, `NEXT TraceNext`, the constants, and the rules of the model as INVARIANT. Leave `TraceUnfinished` out of the config, because the script adds it. Give a constant that the log names as strings, such as `Threads = {"t1", "t2"}`. For a step that the code cannot log, such as a lost reply, add `\/ LoseReply /\ UNCHANGED traceAt` to `TraceNext`. Keep such steps few, and log every step that the code can log: TLC tries an unlogged step at every point, also where the run did not take it, so a rule can break on a path that the run never took. Before you count such a break, replay its path against the code. The run must fit that config: the same ids, and no more work than the model allows, such as one hit for each thread. Start each run with an empty log, and write the logs outside the repo. For a step that the code logs and the model has no action for, such as a call that returns at once and changes nothing, add a line to `Event` with the guard of that case and `UNCHANGED` for the model's variables. Keep the guard: without it the line follows every log.
 
 ```sh
 sh <skill dir>/trace.sh TRACESPEC.tla LOG [CONFIG.cfg]

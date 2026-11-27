@@ -2,11 +2,15 @@
 
 Each version is a git tag, such as `v0.5.2`. The GitHub Action is pinned by that tag.
 
-## Unreleased
+## 0.5.9 - 2026-11-26
 
 ### Added
 
 - `tla-check` says how to check that something eventually happens, such as "every job ends": the rule with `~>`, the config with `SPECIFICATION`, which steps get fairness, how to read exit 13, how to show that the check can fail, and what to do when the code breaks the rule. The create skill points to it. Before, the skills covered only rules about single states.
+- `typescript.md`, a guide for TypeScript and Node, from a test on the token handling of a real SDK: what counts as one step in async code, a test that holds each call at its `await` and tries every order, fake timers, a trace from that test, test runs that pass without checking anything, and scratch copies with `node_modules`.
+- `java.md`, a guide for Java, from a test on the circuit breaker of a real library: Lincheck first, with jcstress as a second opinion, what counts as one step with `volatile`, atomics, and `synchronized`, a monitor that guards an object that the code replaces, how to force an order with a monitor, a trace from a scheduler that runs one thread at a time, and test runs that report a wrong count.
+- `fault.sh` takes extra TLC options after the config, such as `-workers 2`.
+- Smaller lessons from the same test, in the skills: what to do for a language with no guide, dependencies of a scratch copy, a break for the record test that the record does not list, trace logs outside the repo, a logged step that the model has no action for, and an exception of TLC that comes from the machine.
 - An eval case, `eventually`, with a job queue where a job that times out never ends.
 
 ## 0.5.8 - 2026-11-26
